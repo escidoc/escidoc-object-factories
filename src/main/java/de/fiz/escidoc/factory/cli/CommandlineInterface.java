@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +39,7 @@ public final class CommandlineInterface extends Questionary {
 	}
 
 	private void interactive() {
+		System.out.println();
 		try {
 			this.questionTargetDirectory();
 			this.questionResultFile();
@@ -50,8 +54,13 @@ public final class CommandlineInterface extends Questionary {
 	private void questionTargetDirectory() throws Exception {
 		File targetDirectory;
 		do {
-			targetDirectory = poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir")), "Where should the xml files be written to [default="
-					+ System.getProperty("java.io.tmpdir") + "] ?");
+			targetDirectory = poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir") + "/escidoc-test"), "Where should the xml files be written to [default="
+					+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
+			if (!targetDirectory.exists()){
+				if (poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath() + " [default=yes] ?")){
+					targetDirectory.mkdir();
+				}
+			}
 		} while (!targetDirectory.exists() && !targetDirectory.canWrite());
 		properties.setProperty(PROPERTY_TARGET_DIRECTORY, targetDirectory.getAbsolutePath());
 	}
@@ -67,8 +76,8 @@ public final class CommandlineInterface extends Questionary {
 	private void questionResultFile() throws Exception {
 		String resultFile;
 		do {
-			resultFile = poseQuestion(String.class, System.getProperty("java.io.tmpdir") + "/escidoc-object-refs.txt", "What's the path to the result file [default="
-					+ System.getProperty("java.io.tmpdir") + "/escidoc-object-refs.txt] ?");
+			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/escidoc-object-refs.txt", "What's the path to the result file [default="
+					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/escidoc-object-refs.txt] ?");
 		} while (resultFile.length() == 0);
 		properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 	}
@@ -88,7 +97,7 @@ public final class CommandlineInterface extends Questionary {
 			final int numObjects = this.poseQuestion(Integer.class, 10, "How many objects should be created [default=10] ?");
 			this.properties.setProperty(PROPERTY_RANDOM_NUM_FILES, String.valueOf(numObjects));
 			final long size = this.poseQuestion(Long.class, 1000L, "What size in kilobytes should the random data have [default=10] ?");
-			this.properties.setProperty(PROPERTY_RANDOM_SIZE_FILES, String.valueOf(size));
+			this.properties.setProperty(PROPERTY_RANDOM_SIZE_FILES, String.valueOf(size*1024));
 		} else {
 			File dir;
 			do {
@@ -113,6 +122,14 @@ public final class CommandlineInterface extends Questionary {
 			cli.interactive();
 		}
 		try {
+			final String msg;
+			if (props.getProperty(PROPERTY_RANDOM_DATA).equals("true")){
+				final long size=(Long.parseLong(props.getProperty(PROPERTY_RANDOM_NUM_FILES)) * Long.parseLong(props.getProperty(PROPERTY_RANDOM_SIZE_FILES)) * 1024L);
+				msg="generating " + props.getProperty(PROPERTY_RANDOM_NUM_FILES) + " random files with " + props.getProperty(PROPERTY_RANDOM_SIZE_FILES) + " kb each totaling in " + formatSize(size/1024L) + " of data";
+			}else{
+				msg="generating escidoc objects from " + props.getProperty(PROPERTY_INPUT_DIRECTORY);
+			}
+			System.out.println(msg);
 			List<File> items = cli.createObjects();
 			System.out.println("\n");
 			props.store(System.out, "printing the setting for convienience");
@@ -129,8 +146,11 @@ public final class CommandlineInterface extends Questionary {
 		final long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
+		System.out.println();
 		if (randomData) {
 			final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_RANDOM_NUM_FILES));
+			int currentPercent=0;
+			int oldPercent=0;
 			for (int i = 0; i < numFiles; i++) {
 				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createContentStreamFromRandomData(targetDirectory, size)));
 				String xml = itemMarshaller.marshalDocument(item);
@@ -140,9 +160,15 @@ public final class CommandlineInterface extends Questionary {
 					out = new FileOutputStream(outFile);
 					files.add(outFile);
 					IOUtils.write(xml, out);
+					oldPercent=currentPercent;
+					currentPercent=(int) ((double)i/(double)numFiles * 100d);
+					if (currentPercent > oldPercent){
+						printProgressBar(currentPercent);
+					}
 				} finally {
 					out.close();
 				}
+				printProgressBar(100);
 			}
 			File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
 			FileOutputStream out = null;
@@ -159,5 +185,29 @@ public final class CommandlineInterface extends Questionary {
 
 		}
 		return files;
+	}
+	
+	public static void printProgressBar(int percent){
+	    StringBuilder bar = new StringBuilder("[");
+
+	    for(int i = 0; i < 50; i++){
+	        if( i < (percent/2)){
+	            bar.append("=");
+	        }else if( i == (percent/2)){
+	            bar.append(">");
+	        }else{
+	            bar.append(" ");
+	        }
+	    }
+
+	    bar.append("]   " + percent + "%     ");
+	    System.out.print("\r" + bar.toString());
+	}
+	
+	private static final String formatSize(long size){
+		    if(size <= 0) return "0";
+		    final String[] units = new String[] { "B", "KB", "MB", "GB", "TB" };
+		    int digitGroups = (int) (Math.log10(size)/Math.log10(1024));
+		    return new DecimalFormat("#,##0.#").format(size/Math.pow(1024, digitGroups)) + " " + units[digitGroups];
 	}
 }

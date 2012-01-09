@@ -20,8 +20,9 @@ public class Questionary {
 		String input = null;
 		while (!valid) {
 			try {
-				out.print(question);
+				out.print(question + " ");
 				input = reader.readLine();
+				out.println();
 				if (input.length() == 0) {
 					result = defaultValue;
 					valid = true;
