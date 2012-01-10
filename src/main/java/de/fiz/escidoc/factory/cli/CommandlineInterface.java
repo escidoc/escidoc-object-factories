@@ -76,8 +76,8 @@ public final class CommandlineInterface extends Questionary {
 	private void questionResultFile() throws Exception {
 		String resultFile;
 		do {
-			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/escidoc-object-refs.txt", "What's the path to the result file [default="
-					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/escidoc-object-refs.txt] ?");
+			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten.csv", "What's the path to the result file [default="
+					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten.csv] ?");
 		} while (resultFile.length() == 0);
 		properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 	}
@@ -152,7 +152,7 @@ public final class CommandlineInterface extends Questionary {
 			int currentPercent=0;
 			int oldPercent=0;
 			for (int i = 0; i < numFiles; i++) {
-				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createContentStreamFromRandomData(targetDirectory, size)));
+				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromRandomData(targetDirectory, size)));
 				String xml = itemMarshaller.marshalDocument(item);
 				FileOutputStream out = null;
 				try {
@@ -175,7 +175,7 @@ public final class CommandlineInterface extends Questionary {
 			try {
 				out = new FileOutputStream(result, false);
 				for (File f : files) {
-					out.write(new String(f.getName() + "," + f.getAbsolutePath() + "\n").getBytes("UTF-8"));
+					out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
 					out.flush();
 				}
 			} finally {

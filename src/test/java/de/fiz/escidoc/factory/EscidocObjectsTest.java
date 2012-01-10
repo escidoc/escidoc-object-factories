@@ -3,8 +3,7 @@ package de.fiz.escidoc.factory;
 import static de.fiz.escidoc.factory.EscidocObjects.createContext;
 import static de.fiz.escidoc.factory.EscidocObjects.createItem;
 import static de.fiz.escidoc.factory.EscidocObjects.createOrganizationalUnit;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -44,22 +43,18 @@ public class EscidocObjectsTest {
 	}
 	
 	@Test
-	public void testCreatItem1() throws Exception{
-		ContentStream stream=new ContentStream("test-content1", StorageType.INTERNAL_MANAGED.toString(), "application/octet-stream");
-		stream.setHrefOrBase64Content(Base64.encodeBase64String("it's a test".getBytes()));
-		Item item=createItem("invalid-context-id","invalid-content-model-id",Arrays.asList(stream));
-		String xml=itemMarshaller.marshalDocument(item);
-		assertNotNull(xml);
-		assertTrue(xml.length() > 0);
-		System.out.println(xml);
-	}
-
-	@Test
 	public void testCreatItem2() throws Exception{
 		Item item=createItem("invalid-context-id","invalid-content-model-id");
 		String xml=itemMarshaller.marshalDocument(item);
 		assertNotNull(xml);
 		assertTrue(xml.length() > 0);
 		System.out.println(xml);
+	}
+	
+	@Test
+	public void testUpdateItem1() throws Exception{
+		Item item=createItem("invalid-context-id","invalid-content-model-id");
+		Item updated=createItem(item);
+		assertEquals(item, updated);
 	}
 }
