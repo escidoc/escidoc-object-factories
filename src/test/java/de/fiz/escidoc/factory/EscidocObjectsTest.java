@@ -51,10 +51,4 @@ public class EscidocObjectsTest {
 		System.out.println(xml);
 	}
 	
-	@Test
-	public void testUpdateItem1() throws Exception{
-		Item item=createItem("invalid-context-id","invalid-content-model-id");
-		Item updated=createItem(item);
-		assertEquals(item, updated);
-	}
 }
