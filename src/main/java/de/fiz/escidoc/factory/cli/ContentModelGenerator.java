@@ -23,6 +23,8 @@ import de.escidoc.core.resources.cmm.ContentModelProperties;
 public class ContentModelGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.contentmodel.num";
 	private static final String PROPERTY_TARGET_DIRECTORY="generator.contentmodel.target.directory";
+	private static final String PROPERTY_RESULT_PATH = "generator.contentmodel.result.path";
+
 
 	private final Properties properties;
 	private final Marshaller<ContentModel> marshaller=Marshaller.getMarshaller(ContentModel.class);
@@ -48,6 +50,7 @@ public class ContentModelGenerator extends Questionary implements Generator{
 			try{
 				out=new FileOutputStream(xmlFile);
 				IOUtils.write(xml,out);
+				result.add(xmlFile);
 			}finally{
 				IOUtils.closeQuietly(out);
 			}
@@ -56,6 +59,17 @@ public class ContentModelGenerator extends Questionary implements Generator{
 			if (currentPercent > oldPercent){
 				ProgressBar.printProgressBar(currentPercent);
 			}
+		}
+		final File resultFile = new File(properties.getProperty(PROPERTY_RESULT_PATH));
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(resultFile, false);
+			for (File f : result) {
+				out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.flush();
+			}
+		} finally {
+			IOUtils.closeQuietly(out);
 		}
 		ProgressBar.printProgressBar(100,true);
 		return result;
@@ -74,6 +88,12 @@ public class ContentModelGenerator extends Questionary implements Generator{
 				}
 			} while (!dir.exists() && !dir.canWrite());
 			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
+			String resultFile;
+			do {
+				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-cm.csv", "What's the path to the result file [default="
+						+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-cm.csv] ?");
+			} while (resultFile.length() == 0);
+			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		}catch(Exception e){
 			e.printStackTrace();
 		}

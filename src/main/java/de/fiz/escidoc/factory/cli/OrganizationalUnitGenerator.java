@@ -24,6 +24,7 @@ import de.escidoc.core.resources.oum.OrganizationalUnitProperties;
 public class OrganizationalUnitGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.organizationalunit.num";
 	private static final String PROPERTY_TARGET_DIRECTORY="generator.organizationalunit.target.directory";
+	private static final String PROPERTY_RESULT_PATH = "generator.organizationalunit.result.path";
 
 	private final Properties properties;
 	private final Marshaller<OrganizationalUnit> marshaller=Marshaller.getMarshaller(OrganizationalUnit.class);
@@ -47,6 +48,7 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 			try{
 				out=new FileOutputStream(xmlFile);
 				IOUtils.write(xml,out);
+				result.add(xmlFile);
 			}finally{
 				IOUtils.closeQuietly(out);
 			}
@@ -55,6 +57,17 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 			if (currentPercent > oldPercent){
 				ProgressBar.printProgressBar(currentPercent);
 			}
+		}
+		final File resultFile = new File(properties.getProperty(PROPERTY_RESULT_PATH));
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(resultFile, false);
+			for (File f : result) {
+				out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.flush();
+			}
+		} finally {
+			IOUtils.closeQuietly(out);
 		}
 		ProgressBar.printProgressBar(100,true);
 		return result;
@@ -73,6 +86,12 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 				}
 			} while (!dir.exists() && !dir.canWrite());
 			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
+			String resultFile;
+			do {
+				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ou.csv", "What's the path to the result file [default="
+						+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ou.csv] ?");
+			} while (resultFile.length() == 0);
+			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		}catch(Exception e){
 			e.printStackTrace();
 		}

@@ -78,8 +78,8 @@ public final class ItemGenerator extends Questionary implements Generator {
 	private void questionResultFile() throws Exception {
 		String resultFile;
 		do {
-			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten.csv", "What's the path to the result file [default="
-					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten.csv] ?");
+			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv", "What's the path to the result file [default="
+					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv] ?");
 		} while (resultFile.length() == 0);
 		properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 	}
@@ -140,8 +140,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 					out.close();
 				}
 			}
-			ProgressBar.printProgressBar(100);
-			File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
+			final File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
 			FileOutputStream out = null;
 			try {
 				out = new FileOutputStream(result, false);
@@ -152,10 +151,8 @@ public final class ItemGenerator extends Questionary implements Generator {
 			} finally {
 				IOUtils.closeQuietly(out);
 			}
-		} else {
-
 		}
-		System.out.println();
+		ProgressBar.printProgressBar(100,true);
 		return files;
 	}
 }

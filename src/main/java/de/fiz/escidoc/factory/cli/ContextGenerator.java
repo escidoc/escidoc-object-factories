@@ -24,6 +24,7 @@ import de.escidoc.core.resources.om.context.ContextProperties;
 public class ContextGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.context.num";
 	private static final String PROPERTY_TARGET_DIRECTORY="generator.context.target.directory";
+	private static final String PROPERTY_RESULT_PATH = "generator.context.result.path";
 
 	private final Properties properties;
 	private final Marshaller<Context> marshaller=Marshaller.getMarshaller(Context.class);
@@ -49,6 +50,7 @@ public class ContextGenerator extends Questionary implements Generator{
 			try{
 				out=new FileOutputStream(xmlFile);
 				IOUtils.write(xml,out);
+				result.add(xmlFile);
 			}finally{
 				IOUtils.closeQuietly(out);
 			}
@@ -57,6 +59,17 @@ public class ContextGenerator extends Questionary implements Generator{
 			if (currentPercent > oldPercent){
 				ProgressBar.printProgressBar(currentPercent);
 			}
+		}
+		final File resultFile = new File(properties.getProperty(PROPERTY_RESULT_PATH));
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(resultFile, false);
+			for (File f : result) {
+				out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.flush();
+			}
+		} finally {
+			IOUtils.closeQuietly(out);
 		}
 		ProgressBar.printProgressBar(100,true);
 		return result;
@@ -75,6 +88,12 @@ public class ContextGenerator extends Questionary implements Generator{
 				}
 			} while (!dir.exists() && !dir.canWrite());
 			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
+			String resultFile;
+			do {
+				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv", "What's the path to the result file [default="
+						+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv] ?");
+			} while (resultFile.length() == 0);
+			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
