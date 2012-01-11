@@ -3,6 +3,7 @@ package de.fiz.escidoc.factory.cli;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -10,13 +11,16 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.IOUtils;
 
+import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.cmm.ContentModel;
 import de.escidoc.core.resources.cmm.ContentModelProperties;
 
-public class ContentModelGenerator extends Questionary{
+public class ContentModelGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.contentmodel.num";
 	private static final String PROPERTY_TARGET_DIRECTORY="generator.contentmodel.target.directory";
 
@@ -28,10 +32,11 @@ public class ContentModelGenerator extends Questionary{
 		this.properties = properties;
 	}
 	
-	List<File> generateContentModels() throws Exception{
+	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
 		final List<File> result=new ArrayList<File>();
 		final int numFiles=Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
 		final File targetDirectory=new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		int oldPercent,currentPercent=0;
 		for (int i=0;i<numFiles;i++){
 			final ContentModel model=new ContentModel();
 			final ContentModelProperties cp=new ContentModelProperties();
@@ -46,11 +51,17 @@ public class ContentModelGenerator extends Questionary{
 			}finally{
 				IOUtils.closeQuietly(out);
 			}
+			oldPercent=currentPercent;
+			currentPercent=(int) ((double)i/(double)numFiles * 100d);
+			if (currentPercent > oldPercent){
+				ProgressBar.printProgressBar(currentPercent);
+			}
 		}
+		ProgressBar.printProgressBar(100,true);
 		return result;
 	}
 
-	void interactive() {
+	public void interactive() {
 		try{
 			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many content models should be created [default=10] ? ")));
 			File dir;

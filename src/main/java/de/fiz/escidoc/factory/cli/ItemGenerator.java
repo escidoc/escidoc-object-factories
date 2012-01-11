@@ -14,13 +14,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.IOUtils;
 
+import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.om.item.Item;
 import de.fiz.escidoc.factory.EscidocObjects;
 
-public final class ItemGenerator extends Questionary {
+public final class ItemGenerator extends Questionary implements Generator {
 	static final String PROPERTY_RANDOM_NUM_FILES = "generator.item.random.num";
 	static final String PROPERTY_RANDOM_DATA = "generator.item.random.data";
 	static final String PROPERTY_RANDOM_SIZE_FILES = "generator.item.random.size";
@@ -38,8 +41,7 @@ public final class ItemGenerator extends Questionary {
 		this.properties = properties;
 	}
 
-	void interactive() {
-		System.out.println();
+	public void interactive() {
 		try {
 			this.questionTargetDirectory();
 			this.questionResultFile();
@@ -109,14 +111,13 @@ public final class ItemGenerator extends Questionary {
 		}
 	}
 
-	List<File> generateItems() throws Exception {
+	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
 		final List<File> files = new ArrayList<File>();
 		final boolean randomData = Boolean.parseBoolean(properties.getProperty(PROPERTY_RANDOM_DATA));
 		final File targetDirectory = new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
 		final long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
-		System.out.println();
 		if (randomData) {
 			final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_RANDOM_NUM_FILES));
 			int currentPercent=0;
@@ -133,13 +134,13 @@ public final class ItemGenerator extends Questionary {
 					oldPercent=currentPercent;
 					currentPercent=(int) ((double)i/(double)numFiles * 100d);
 					if (currentPercent > oldPercent){
-						printProgressBar(currentPercent);
+						ProgressBar.printProgressBar(currentPercent);
 					}
 				} finally {
 					out.close();
 				}
-				printProgressBar(100);
 			}
+			ProgressBar.printProgressBar(100);
 			File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
 			FileOutputStream out = null;
 			try {
@@ -154,24 +155,7 @@ public final class ItemGenerator extends Questionary {
 		} else {
 
 		}
+		System.out.println();
 		return files;
 	}
-	
-	public static void printProgressBar(int percent){
-	    StringBuilder bar = new StringBuilder("[");
-
-	    for(int i = 0; i < 50; i++){
-	        if( i < (percent/2)){
-	            bar.append("=");
-	        }else if( i == (percent/2)){
-	            bar.append(">");
-	        }else{
-	            bar.append(" ");
-	        }
-	    }
-
-	    bar.append("]   " + percent + "%     ");
-	    System.out.print("\r" + bar.toString());
-	}
-	
 }
