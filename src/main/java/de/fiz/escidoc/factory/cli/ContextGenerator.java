@@ -18,12 +18,17 @@ import org.apache.commons.io.IOUtils;
 import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.common.properties.PublicStatus;
+import de.escidoc.core.resources.common.reference.OrganizationalUnitRef;
+import de.escidoc.core.resources.om.context.AdminDescriptor;
+import de.escidoc.core.resources.om.context.AdminDescriptors;
 import de.escidoc.core.resources.om.context.Context;
 import de.escidoc.core.resources.om.context.ContextProperties;
+import de.escidoc.core.resources.om.context.OrganizationalUnitRefs;
 
 public class ContextGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.context.num";
 	private static final String PROPERTY_TARGET_DIRECTORY="generator.context.target.directory";
+	private static final String PROPERTY_ORGANIZATIONAL_UNIT_ID = "generator.context.ou.id";
 	private static final String PROPERTY_RESULT_PATH = "generator.context.result.path";
 
 	private final Properties properties;
@@ -40,10 +45,19 @@ public class ContextGenerator extends Questionary implements Generator{
 		final File targetDirectory=new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
 		int oldPercent,currentPercent=0;
 		for (int i=0;i<numFiles;i++){
+			final OrganizationalUnitRefs ouRefs=new OrganizationalUnitRefs();
+			ouRefs.add(new OrganizationalUnitRef(properties.getProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID)));
+			final AdminDescriptor desc=new AdminDescriptor("What?");
+			final AdminDescriptors adms=new AdminDescriptors();
+			adms.add(desc);
 			final ContextProperties cp=new ContextProperties.Builder("context-" + UUID.randomUUID().toString(), PublicStatus.PENDING)
+				.type("type1")
+				.organizationUnitRefs(ouRefs)
+				.description("test-description")
 				.build();
 			final Context ctx=new Context();
 			ctx.setProperties(cp);
+			ctx.setAdminDescriptors(adms);
 			final File xmlFile=File.createTempFile("context-", ".xml", targetDirectory);
 			final String xml=marshaller.marshalDocument(ctx);
 			OutputStream out=null;
@@ -88,6 +102,7 @@ public class ContextGenerator extends Questionary implements Generator{
 				}
 			} while (!dir.exists() && !dir.canWrite());
 			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
+			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(String.class, "", "What's the id of the organizational unit to associate the context with? ")));
 			String resultFile;
 			do {
 				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv", "What's the path to the result file [default="
