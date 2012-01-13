@@ -9,7 +9,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -20,7 +19,7 @@ import org.apache.commons.io.IOUtils;
 
 public class CommandlineInterface {
 	private static final String PROPERTY_VALIDITY = "properties.valid";
-	public static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
+	static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
 
 	private static void printUsage() {
 		StringBuilder helpBuilder = new StringBuilder();
@@ -85,10 +84,10 @@ public class CommandlineInterface {
 		}
 		// get the settings for the generators through an interactive user
 		// session if no properties have been set already
-		createSettings(properties,generators);
+		createSettings(properties, generators);
 		// store the properties for convenience
 		storeProperties(properties);
-		// generate the XMLS
+		// generate the XMLs
 		generateXMLFiles(generators);
 		// and create the jar file
 		createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
@@ -97,7 +96,6 @@ public class CommandlineInterface {
 
 	private static void generateXMLFiles(List<Generator> generators) {
 		System.out.println("\nGenerating xml files...");
-		// and finally generate the files
 		for (final Generator gen : generators) {
 			try {
 				System.out.println(":: running generator " + gen.getClass().getSimpleName());
@@ -124,20 +122,20 @@ public class CommandlineInterface {
 			return;
 		}
 		System.out.println();
-		File targetDirectory=null;
+		File targetDirectory = null;
 		do {
 			Questionary q = new Questionary(new BufferedReader(new InputStreamReader(System.in)), System.out);
-			try{
+			try {
 				targetDirectory = q.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir")
-					+ "/escidoc-test"), "Where should the xml files be written to [default="
-					+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
+						+ "/escidoc-test"), "Where should the xml files be written to [default="
+						+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
 				if (!targetDirectory.exists()) {
 					if (q.poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath()
 							+ " [default=yes] ?")) {
 						targetDirectory.mkdir();
 					}
 				}
-			}catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} while (!targetDirectory.exists() && !targetDirectory.canWrite());
@@ -149,8 +147,8 @@ public class CommandlineInterface {
 	}
 
 	private static void createJar(String dir) {
-		JarOutputStream out=null;
-		InputStream in=null;
+		JarOutputStream out = null;
+		InputStream in = null;
 		File directory = new File(dir);
 		File jarFile = new File(directory, "testdaten.jar");
 		try {
@@ -163,7 +161,7 @@ public class CommandlineInterface {
 					IOUtils.copy(in, out);
 				}
 			}
-		}catch(IOException e){
+		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			IOUtils.closeQuietly(in);

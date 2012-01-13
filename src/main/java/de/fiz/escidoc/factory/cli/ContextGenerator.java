@@ -3,7 +3,6 @@ package de.fiz.escidoc.factory.cli;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -11,11 +10,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.io.IOUtils;
 
-import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.common.properties.PublicStatus;
 import de.escidoc.core.resources.common.reference.OrganizationalUnitRef;
@@ -25,52 +21,52 @@ import de.escidoc.core.resources.om.context.Context;
 import de.escidoc.core.resources.om.context.ContextProperties;
 import de.escidoc.core.resources.om.context.OrganizationalUnitRefs;
 
-public class ContextGenerator extends Questionary implements Generator{
-	private static final String PROPERTY_NUMFILES="generator.context.num";
+public class ContextGenerator extends Questionary implements Generator {
+	private static final String PROPERTY_NUMFILES = "generator.context.num";
 	private static final String PROPERTY_ORGANIZATIONAL_UNIT_ID = "generator.context.ou.id";
 	private static final String PROPERTY_RESULT_PATH = "generator.context.result.path";
 
 	private final Properties properties;
-	private final Marshaller<Context> marshaller=Marshaller.getMarshaller(Context.class);
-	
+	private final Marshaller<Context> marshaller = Marshaller.getMarshaller(Context.class);
+
 	ContextGenerator(final Properties properties) {
 		super(new BufferedReader(new InputStreamReader(System.in)), System.out);
 		this.properties = properties;
 	}
-	
-	public List<File> generateFiles() throws Exception{
-		final List<File> result=new ArrayList<File>();
-		final int numFiles=Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
-		final File targetDirectory=new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
-		int oldPercent,currentPercent=0;
-		for (int i=0;i<numFiles;i++){
-			final OrganizationalUnitRefs ouRefs=new OrganizationalUnitRefs();
+
+	public List<File> generateFiles() throws Exception {
+		final List<File> result = new ArrayList<File>();
+		final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
+		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
+		int oldPercent, currentPercent = 0;
+		for (int i = 0; i < numFiles; i++) {
+			final OrganizationalUnitRefs ouRefs = new OrganizationalUnitRefs();
 			ouRefs.add(new OrganizationalUnitRef(properties.getProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID)));
-			final AdminDescriptor desc=new AdminDescriptor("admin");
+			final AdminDescriptor desc = new AdminDescriptor("admin");
 			desc.setContent("<void />");
-			final AdminDescriptors adms=new AdminDescriptors();
+			final AdminDescriptors adms = new AdminDescriptors();
 			adms.add(desc);
-			final ContextProperties cp=new ContextProperties.Builder("context-" + UUID.randomUUID().toString(), PublicStatus.PENDING)
-				.type("type1")
-				.organizationUnitRefs(ouRefs)
-				.description("test-description")
-				.build();
-			final Context ctx=new Context();
+			final ContextProperties cp = new ContextProperties.Builder("context-" + UUID.randomUUID().toString(), PublicStatus.PENDING)
+					.type("type1")
+					.organizationUnitRefs(ouRefs)
+					.description("test-description")
+					.build();
+			final Context ctx = new Context();
 			ctx.setProperties(cp);
 			ctx.setAdminDescriptors(adms);
-			final File xmlFile=File.createTempFile("context-", ".xml", targetDirectory);
-			final String xml=marshaller.marshalDocument(ctx);
-			OutputStream out=null;
-			try{
-				out=new FileOutputStream(xmlFile);
-				IOUtils.write(xml,out);
+			final File xmlFile = File.createTempFile("context-", ".xml", targetDirectory);
+			final String xml = marshaller.marshalDocument(ctx);
+			OutputStream out = null;
+			try {
+				out = new FileOutputStream(xmlFile);
+				IOUtils.write(xml, out);
 				result.add(xmlFile);
-			}finally{
+			} finally {
 				IOUtils.closeQuietly(out);
 			}
-			oldPercent=currentPercent;
-			currentPercent=(int) ((double)i/(double)numFiles * 100d);
-			if (currentPercent > oldPercent){
+			oldPercent = currentPercent;
+			currentPercent = (int) ((double) i / (double) numFiles * 100d);
+			if (currentPercent > oldPercent) {
 				ProgressBar.printProgressBar(currentPercent);
 			}
 		}
@@ -85,21 +81,23 @@ public class ContextGenerator extends Questionary implements Generator{
 		} finally {
 			IOUtils.closeQuietly(out);
 		}
-		ProgressBar.printProgressBar(100,true);
+		ProgressBar.printProgressBar(100, true);
 		return result;
 	}
 
 	public void interactive() {
-		try{
+		try {
 			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many Contexts should be created [default=10] ? ")));
 			properties.setProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID, String.valueOf(poseQuestion(String.class, "", "What's the id of the organizational unit to associate the context with? ")));
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv", "What's the path to the result file [default="
-						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv] ?");
+				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+						+ "/testdaten-ctx.csv", "What's the path to the result file [default="
+						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+						+ "/testdaten-ctx.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

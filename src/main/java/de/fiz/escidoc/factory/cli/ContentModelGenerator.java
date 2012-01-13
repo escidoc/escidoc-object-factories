@@ -20,42 +20,41 @@ import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.cmm.ContentModel;
 import de.escidoc.core.resources.cmm.ContentModelProperties;
 
-public class ContentModelGenerator extends Questionary implements Generator{
-	private static final String PROPERTY_NUMFILES="generator.contentmodel.num";
+public class ContentModelGenerator extends Questionary implements Generator {
+	private static final String PROPERTY_NUMFILES = "generator.contentmodel.num";
 	private static final String PROPERTY_RESULT_PATH = "generator.contentmodel.result.path";
 
-
 	private final Properties properties;
-	private final Marshaller<ContentModel> marshaller=Marshaller.getMarshaller(ContentModel.class);
-	
+	private final Marshaller<ContentModel> marshaller = Marshaller.getMarshaller(ContentModel.class);
+
 	ContentModelGenerator(final Properties properties) {
 		super(new BufferedReader(new InputStreamReader(System.in)), System.out);
 		this.properties = properties;
 	}
-	
-	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
-		final List<File> result=new ArrayList<File>();
-		final int numFiles=Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
-		final File targetDirectory=new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
-		int oldPercent,currentPercent=0;
-		for (int i=0;i<numFiles;i++){
-			final ContentModel model=new ContentModel();
-			final ContentModelProperties cp=new ContentModelProperties();
+
+	public List<File> generateFiles() throws IOException, ParserConfigurationException, InternalClientException {
+		final List<File> result = new ArrayList<File>();
+		final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
+		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
+		int oldPercent, currentPercent = 0;
+		for (int i = 0; i < numFiles; i++) {
+			final ContentModel model = new ContentModel();
+			final ContentModelProperties cp = new ContentModelProperties();
 			cp.setName("contentmodel-" + UUID.randomUUID().toString());
 			model.setProperties(cp);
-			final File xmlFile=File.createTempFile("contentmodel-", ".xml", targetDirectory);
-			final String xml=marshaller.marshalDocument(model);
-			OutputStream out=null;
-			try{
-				out=new FileOutputStream(xmlFile);
-				IOUtils.write(xml,out);
+			final File xmlFile = File.createTempFile("contentmodel-", ".xml", targetDirectory);
+			final String xml = marshaller.marshalDocument(model);
+			OutputStream out = null;
+			try {
+				out = new FileOutputStream(xmlFile);
+				IOUtils.write(xml, out);
 				result.add(xmlFile);
-			}finally{
+			} finally {
 				IOUtils.closeQuietly(out);
 			}
-			oldPercent=currentPercent;
-			currentPercent=(int) ((double)i/(double)numFiles * 100d);
-			if (currentPercent > oldPercent){
+			oldPercent = currentPercent;
+			currentPercent = (int) ((double) i / (double) numFiles * 100d);
+			if (currentPercent > oldPercent) {
 				ProgressBar.printProgressBar(currentPercent);
 			}
 		}
@@ -70,23 +69,24 @@ public class ContentModelGenerator extends Questionary implements Generator{
 		} finally {
 			IOUtils.closeQuietly(out);
 		}
-		ProgressBar.printProgressBar(100,true);
+		ProgressBar.printProgressBar(100, true);
 		return result;
 	}
 
 	public void interactive() {
-		try{
+		try {
 			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many content models should be created [default=10] ? ")));
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-cm.csv", "What's the path to the result file [default="
-						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-cm.csv] ?");
+				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+						+ "/testdaten-cm.csv", "What's the path to the result file [default="
+						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+						+ "/testdaten-cm.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
 
 }

@@ -21,40 +21,41 @@ import de.escidoc.core.resources.common.properties.PublicStatus;
 import de.escidoc.core.resources.oum.OrganizationalUnit;
 import de.escidoc.core.resources.oum.OrganizationalUnitProperties;
 
-public class OrganizationalUnitGenerator extends Questionary implements Generator{
-	private static final String PROPERTY_NUMFILES="generator.organizationalunit.num";
-	private static final String PROPERTY_TARGET_DIRECTORY="generator.organizationalunit.target.directory";
+public class OrganizationalUnitGenerator extends Questionary implements Generator {
+	private static final String PROPERTY_NUMFILES = "generator.organizationalunit.num";
+	private static final String PROPERTY_TARGET_DIRECTORY = "generator.organizationalunit.target.directory";
 	private static final String PROPERTY_RESULT_PATH = "generator.organizationalunit.result.path";
 
 	private final Properties properties;
-	private final Marshaller<OrganizationalUnit> marshaller=Marshaller.getMarshaller(OrganizationalUnit.class);
-	
+	private final Marshaller<OrganizationalUnit> marshaller = Marshaller.getMarshaller(OrganizationalUnit.class);
+
 	public OrganizationalUnitGenerator(final Properties properties) {
 		super(new BufferedReader(new InputStreamReader(System.in)), System.out);
 		this.properties = properties;
 	}
-	
-	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
-		final List<File> result=new ArrayList<File>();
-		final int numFiles=Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
-		final File targetDirectory=new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
-		int oldPercent,currentPercent=0;
-		for (int i=0;i<numFiles;i++){
-			final OrganizationalUnitProperties op=new OrganizationalUnitProperties.Builder("ou-" + UUID.randomUUID().toString(), PublicStatus.PENDING).build();
-			final OrganizationalUnit ou=new OrganizationalUnit.Builder(op).build();
-			final File xmlFile=File.createTempFile("ou-", ".xml", targetDirectory);
-			final String xml=marshaller.marshalDocument(ou);
-			OutputStream out=null;
-			try{
-				out=new FileOutputStream(xmlFile);
-				IOUtils.write(xml,out);
+
+	public List<File> generateFiles() throws IOException, ParserConfigurationException, InternalClientException {
+		final List<File> result = new ArrayList<File>();
+		final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
+		final File targetDirectory = new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		int oldPercent, currentPercent = 0;
+		for (int i = 0; i < numFiles; i++) {
+			final OrganizationalUnitProperties op = new OrganizationalUnitProperties.Builder("ou-"
+					+ UUID.randomUUID().toString(), PublicStatus.PENDING).build();
+			final OrganizationalUnit ou = new OrganizationalUnit.Builder(op).build();
+			final File xmlFile = File.createTempFile("ou-", ".xml", targetDirectory);
+			final String xml = marshaller.marshalDocument(ou);
+			OutputStream out = null;
+			try {
+				out = new FileOutputStream(xmlFile);
+				IOUtils.write(xml, out);
 				result.add(xmlFile);
-			}finally{
+			} finally {
 				IOUtils.closeQuietly(out);
 			}
-			oldPercent=currentPercent;
-			currentPercent=(int) ((double)i/(double)numFiles * 100d);
-			if (currentPercent > oldPercent){
+			oldPercent = currentPercent;
+			currentPercent = (int) ((double) i / (double) numFiles * 100d);
+			if (currentPercent > oldPercent) {
 				ProgressBar.printProgressBar(currentPercent);
 			}
 		}
@@ -69,18 +70,20 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 		} finally {
 			IOUtils.closeQuietly(out);
 		}
-		ProgressBar.printProgressBar(100,true);
+		ProgressBar.printProgressBar(100, true);
 		return result;
 	}
 
 	public void interactive() {
-		try{
+		try {
 			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many organizational units should be created [default=10] ? ")));
 			File dir;
 			do {
-				dir = this.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir") + "/escidoc-test"), "Where should the organizational unit xml files be written to [default=" + System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
-				if (!dir.exists()){
-					if (poseQuestion(Boolean.class, true, "Create directory " + dir.getAbsolutePath() + " [default=yes] ?")){
+				dir = this.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir") + "/escidoc-test"), "Where should the organizational unit xml files be written to [default="
+						+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
+				if (!dir.exists()) {
+					if (poseQuestion(Boolean.class, true, "Create directory " + dir.getAbsolutePath()
+							+ " [default=yes] ?")) {
 						dir.mkdir();
 					}
 				}
@@ -88,14 +91,14 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ou.csv", "What's the path to the result file [default="
+				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY)
+						+ "/testdaten-ou.csv", "What's the path to the result file [default="
 						+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ou.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
 
 }

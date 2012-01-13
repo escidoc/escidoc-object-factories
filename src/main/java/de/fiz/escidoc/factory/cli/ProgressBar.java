@@ -2,9 +2,10 @@ package de.fiz.escidoc.factory.cli;
 
 public abstract class ProgressBar {
 	public static void printProgressBar(int percent) {
-		printProgressBar(percent,false);
+		printProgressBar(percent, false);
 	}
-	public static void printProgressBar(int percent,boolean lineBreak) {
+
+	public static void printProgressBar(int percent, boolean lineBreak) {
 		StringBuilder bar = new StringBuilder("[");
 		for (int i = 0; i < 50; i++) {
 			if (i < (percent / 2)) {
@@ -18,7 +19,7 @@ public abstract class ProgressBar {
 
 		bar.append("]   " + percent + "%     ");
 		System.out.print("\r" + bar.toString());
-		if (lineBreak){
+		if (lineBreak) {
 			System.out.println();
 		}
 	}

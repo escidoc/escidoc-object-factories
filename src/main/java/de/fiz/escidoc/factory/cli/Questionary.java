@@ -26,7 +26,7 @@ public class Questionary {
 				if (input.length() == 0) {
 					result = defaultValue;
 					valid = true;
-				}else{
+				} else {
 					if (resultClazz == String.class) {
 						result = (T) input;
 						valid = true;
@@ -35,7 +35,7 @@ public class Questionary {
 						valid = true;
 					} else if (resultClazz == Long.class) {
 						result = (T) new Long(input);
-						valid=true;
+						valid = true;
 					} else if (resultClazz == Boolean.class) {
 						// Booleans need a little more handling than the rest
 						// Since "no", "yes" and the like should be checked too

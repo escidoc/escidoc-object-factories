@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -18,9 +17,7 @@ import org.joda.time.DateTime;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import de.escidoc.core.client.interfaces.base.Createable;
 import de.escidoc.core.resources.common.ContentStream;
-import de.escidoc.core.resources.common.ContentStreams;
 import de.escidoc.core.resources.common.MetadataRecord;
 import de.escidoc.core.resources.common.MetadataRecords;
 import de.escidoc.core.resources.common.properties.PublicStatus;
@@ -42,9 +39,10 @@ import de.escidoc.core.resources.oum.OrganizationalUnit;
 import de.escidoc.core.resources.oum.OrganizationalUnitProperties;
 
 /**
- * Abstract factory class for generating different kinds of eScidoc objects
- * like items, contexts and OUs
- * This class is intended to be used in testing environments for data generation
+ * Abstract factory class for generating different kinds of eScidoc objects like
+ * items, contexts and OUs This class is intended to be used in testing
+ * environments for data generation
+ * 
  * @author fasseg
  */
 public abstract class EscidocObjects {
@@ -52,43 +50,50 @@ public abstract class EscidocObjects {
 
 	/**
 	 * Create an item from the given information
-	 * @param contextId the context's ID to be linked to this item
-	 * @param contentModelId the content model's ID which is to be linked to this item
-	 * @param componentList this item's list of {@link Component}s
-	 * @param mdRecords this item's list of metadata records
+	 * 
+	 * @param contextId
+	 *            the context's ID to be linked to this item
+	 * @param contentModelId
+	 *            the content model's ID which is to be linked to this item
+	 * @param componentList
+	 *            this item's list of {@link Component}s
+	 * @param mdRecords
+	 *            this item's list of metadata records
 	 * @return a new instance of {@link Item}
 	 * @throws ParserConfigurationException
 	 */
 	public static Item createItem(final String contextId, final String contentModelId,
-			final List<Component> componentList, final List<MetadataRecord> mdRecords) throws ParserConfigurationException{
+			final List<Component> componentList, final List<MetadataRecord> mdRecords)
+			throws ParserConfigurationException {
 		// create the Item' properties
 		final ItemProperties properties = new ItemProperties.Builder(PublicStatus.PENDING)
 				.context(new ContextRef(contextId))
 				.contentModel(new ContentModelRef(contentModelId))
 				.build();
 		// a list of Components
-		final Components components=new Components();
+		final Components components = new Components();
 		components.addAll(componentList);
 		// and metadata records
 		final MetadataRecords records = new MetadataRecords();
-		if (mdRecords == null || mdRecords.size() == 0){
-			// if there are now metadata records, add one "escidoc" record to make the xml valid
-			MetadataRecord escidoc= new MetadataRecord("escidoc");
+		if (mdRecords == null || mdRecords.size() == 0) {
+			// if there are now metadata records, add one "escidoc" record to
+			// make the xml valid
+			MetadataRecord escidoc = new MetadataRecord("escidoc");
 			escidoc.setLastModificationDate(new DateTime());
-	        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-	        factory.setNamespaceAware(true);
-	        factory.setCoalescing(true);
-	        factory.setValidating(true);
-	        final DocumentBuilder builder = factory.newDocumentBuilder();
-	        final Document doc = builder.newDocument();
-	        final Element mdRecordContent = doc.createElementNS(null, "test");
-	        final Element titleElmt = doc.createElementNS("http://purl.org/dc/elements/1.1/", "title");
-	        titleElmt.setPrefix("dc");
-	        titleElmt.setNodeValue("test-title");
-	        mdRecordContent.appendChild(titleElmt);
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setNamespaceAware(true);
+			factory.setCoalescing(true);
+			factory.setValidating(true);
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			final Document doc = builder.newDocument();
+			final Element mdRecordContent = doc.createElementNS(null, "test");
+			final Element titleElmt = doc.createElementNS("http://purl.org/dc/elements/1.1/", "title");
+			titleElmt.setPrefix("dc");
+			titleElmt.setNodeValue("test-title");
+			mdRecordContent.appendChild(titleElmt);
 			escidoc.setContent(mdRecordContent);
 			records.add(escidoc);
-		}else{
+		} else {
 			records.addAll(mdRecords);
 		}
 		return new Item.Builder(properties)
@@ -99,29 +104,34 @@ public abstract class EscidocObjects {
 
 	/**
 	 * Create a {@link Component} from a URI with a given PID
-	 * @param pid the pid to be associated with this {@link Component}
-	 * @param uri the URI of the {@link Component}'s data
+	 * 
+	 * @param pid
+	 *            the pid to be associated with this {@link Component}
+	 * @param uri
+	 *            the URI of the {@link Component}'s data
 	 * @return a new {@link Component} instance
 	 */
-	public static Component createComponentFromURI(final String pid,final URI uri){
-		ComponentContent content=new ComponentContent();
+	public static Component createComponentFromURI(final String pid, final URI uri) {
+		ComponentContent content = new ComponentContent();
 		content.setXLinkHref(uri.toASCIIString());
 		content.setStorage(StorageType.INTERNAL_MANAGED);
-		Component comp=new Component();
-		ComponentProperties props=new ComponentProperties.Builder(pid, uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1))
-			.mimeType("application/octet-stream")
-			.contentCategory("pre-print")
-			.validStatus("valid")
-			.visibility("public")
-			.build();
+		Component comp = new Component();
+		ComponentProperties props = new ComponentProperties.Builder(pid, uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1))
+				.mimeType("application/octet-stream")
+				.contentCategory("pre-print")
+				.validStatus("valid")
+				.visibility("public")
+				.build();
 		comp.setProperties(props);
 		comp.setContent(content);
 		return comp;
 	}
-	
+
 	/**
 	 * create a {@link ContentStream} from a given URI
-	 * @param uri the URI which holds the {@link ContentStream}'s data
+	 * 
+	 * @param uri
+	 *            the URI which holds the {@link ContentStream}'s data
 	 * @return a new {@link ContentStream} instance
 	 */
 	public static ContentStream createContentStreamFromURI(final URI uri) {
@@ -132,8 +142,11 @@ public abstract class EscidocObjects {
 
 	/**
 	 * create a {@link ContentStream} from randomly generated data
-	 * @param targetDirectory the directory to write the content files
-	 * @param size the size the random data should have
+	 * 
+	 * @param targetDirectory
+	 *            the directory to write the content files
+	 * @param size
+	 *            the size the random data should have
 	 * @return a new {@link ContentStream} instance
 	 * @throws IOException
 	 */
@@ -159,9 +172,13 @@ public abstract class EscidocObjects {
 	}
 
 	/**
-	 * Create a {@link Component} from random data and the data into content file in a given directory
-	 * @param targetDirectory the directory to write the content file to
-	 * @param size the size the random data should have
+	 * Create a {@link Component} from random data and the data into content
+	 * file in a given directory
+	 * 
+	 * @param targetDirectory
+	 *            the directory to write the content file to
+	 * @param size
+	 *            the size the random data should have
 	 * @return a new {@link Component} instance
 	 * @throws IOException
 	 */
@@ -188,12 +205,17 @@ public abstract class EscidocObjects {
 
 	/**
 	 * Create an item from the given information
-	 * @param contextId the context's ID to be linked to this item
-	 * @param contentModelId the content model's ID which is to be linked to this item
-	 * @param componentList this item's list of {@link Component}s
+	 * 
+	 * @param contextId
+	 *            the context's ID to be linked to this item
+	 * @param contentModelId
+	 *            the content model's ID which is to be linked to this item
+	 * @param componentList
+	 *            this item's list of {@link Component}s
 	 * @return a new instance of {@link Item}
 	 * @throws ParserConfigurationException
 	 */
+	@SuppressWarnings("unchecked")
 	public static Item createItem(final String contextId, final String contentModelId,
 			List<Component> componentList) throws ParserConfigurationException {
 		return createItem(contextId, contentModelId, componentList, Collections.EMPTY_LIST);
@@ -201,19 +223,27 @@ public abstract class EscidocObjects {
 
 	/**
 	 * Create an item from the given information
-	 * @param contextId the context's ID to be linked to this item
-	 * @param contentModelId the content model's ID which is to be linked to this item
+	 * 
+	 * @param contextId
+	 *            the context's ID to be linked to this item
+	 * @param contentModelId
+	 *            the content model's ID which is to be linked to this item
 	 * @return a new instance of {@link Item}
 	 * @throws ParserConfigurationException
 	 */
-	public static Item createItem(final String contextId, final String contentModelId) throws ParserConfigurationException{
+	@SuppressWarnings("unchecked")
+	public static Item createItem(final String contextId, final String contentModelId)
+			throws ParserConfigurationException {
 		return createItem(contextId, contentModelId, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 	}
 
 	/**
 	 * Create a new {@link Context} instance with a given name and ou id
-	 * @param name the name of the {@link Context}
-	 * @param ouId the organizational unit id of the {@link Context}
+	 * 
+	 * @param name
+	 *            the name of the {@link Context}
+	 * @param ouId
+	 *            the organizational unit id of the {@link Context}
 	 * @return a new {@link Context} instance
 	 */
 	public static Context createContext(final String name, final String ouId) {
@@ -222,8 +252,12 @@ public abstract class EscidocObjects {
 
 	/**
 	 * Create a new {@link Context} instance with a given name and ou id
-	 * @param name the name of the {@link Context}
-	 * @param ouIds the {@link List} of organizational unit ids of the {@link Context}
+	 * 
+	 * @param name
+	 *            the name of the {@link Context}
+	 * @param ouIds
+	 *            the {@link List} of organizational unit ids of the
+	 *            {@link Context}
 	 * @return a new {@link Context} instance
 	 */
 	public static Context createContext(final String name, final List<String> ouIds) {
@@ -236,10 +270,12 @@ public abstract class EscidocObjects {
 				.build();
 		return new Context(properties, new AdminDescriptors());
 	}
-	
+
 	/**
 	 * Create a new {@link OrganizationalUnit} instance with a given name
-	 * @param name the name of the {@link OrganizationalUnit}
+	 * 
+	 * @param name
+	 *            the name of the {@link OrganizationalUnit}
 	 * @return a new {@link OrganizationalUnit} instance
 	 */
 	public static OrganizationalUnit createOrganizationalUnit(final String name) {
