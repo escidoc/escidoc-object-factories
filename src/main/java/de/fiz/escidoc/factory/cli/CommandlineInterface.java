@@ -83,47 +83,21 @@ public class CommandlineInterface {
 				return;
 			}
 		}
-
 		// get the settings for the generators through an interactive user
 		// session
 		if (!Boolean.parseBoolean(properties.getProperty(PROPERTY_VALIDITY))) {
-			System.out.println();
-			File targetDirectory=null;
-			do {
-				Questionary q = new Questionary(new BufferedReader(new InputStreamReader(System.in)), System.out);
-				try{
-					targetDirectory = q.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir")
-						+ "/escidoc-test"), "Where should the xml files be written to [default="
-						+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
-					if (!targetDirectory.exists()) {
-						if (q.poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath()
-								+ " [default=yes] ?")) {
-							targetDirectory.mkdir();
-						}
-					}
-				}catch (Exception e) {
-					e.printStackTrace();
-				}
-			} while (!targetDirectory.exists() && !targetDirectory.canWrite());
-			properties.setProperty(PROPERTY_TARGET_DIRECTORY, targetDirectory.getAbsolutePath());
-			for (final Generator gen : generators) {
-				System.out.println(":: Settings for " + gen.getClass().getSimpleName());
-				gen.interactive();
-			}
+			createSettings(properties,generators);
 		}
-
 		// store the properties for convenience
-		System.out.println();
-		try {
-			// properties.store(System.out,
-			// "printing the setting for convienience");
-			final File propFile = new File("generator.properties");
-			properties.store(new FileOutputStream(propFile), "created by escidoc-object-generator");
-			System.out.println("saved properties to " + propFile.getAbsolutePath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		storeProperties(properties);
+		// generate the XMLS
+		generateXMLFiles(generators);
+		// and create the jar file
+		createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		System.out.println("\nFinished!\n");
+	}
 
+	private static void generateXMLFiles(List<Generator> generators) {
 		System.out.println("\nGenerating xml files...");
 		// and finally generate the files
 		for (final Generator gen : generators) {
@@ -134,16 +108,46 @@ public class CommandlineInterface {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("\nGenerating jar file...");
+	}
+
+	private static void storeProperties(Properties properties) {
+		System.out.println();
 		try {
-			createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+			final File propFile = new File("generator.properties");
+			properties.store(new FileOutputStream(propFile), "created by escidoc-object-generator");
+			System.out.println("saved properties to " + propFile.getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("\nFinished!\n");
 	}
 
-	private static void createJar(String dir) throws IOException {
+	private static void createSettings(Properties properties, List<Generator> generators) {
+		System.out.println();
+		File targetDirectory=null;
+		do {
+			Questionary q = new Questionary(new BufferedReader(new InputStreamReader(System.in)), System.out);
+			try{
+				targetDirectory = q.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir")
+					+ "/escidoc-test"), "Where should the xml files be written to [default="
+					+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
+				if (!targetDirectory.exists()) {
+					if (q.poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath()
+							+ " [default=yes] ?")) {
+						targetDirectory.mkdir();
+					}
+				}
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		} while (!targetDirectory.exists() && !targetDirectory.canWrite());
+		properties.setProperty(PROPERTY_TARGET_DIRECTORY, targetDirectory.getAbsolutePath());
+		for (final Generator gen : generators) {
+			System.out.println(":: Settings for " + gen.getClass().getSimpleName());
+			gen.interactive();
+		}
+	}
+
+	private static void createJar(String dir) {
 		JarOutputStream out=null;
 		InputStream in=null;
 		File directory = new File(dir);
@@ -158,6 +162,8 @@ public class CommandlineInterface {
 					IOUtils.copy(in, out);
 				}
 			}
+		}catch(IOException e){
+			e.printStackTrace();
 		} finally {
 			IOUtils.closeQuietly(in);
 			IOUtils.closeQuietly(out);
