@@ -27,7 +27,6 @@ public final class ItemGenerator extends Questionary implements Generator {
 	static final String PROPERTY_RANDOM_NUM_FILES = "generator.item.random.num";
 	static final String PROPERTY_RANDOM_DATA = "generator.item.random.data";
 	static final String PROPERTY_RANDOM_SIZE_FILES = "generator.item.random.size";
-	static final String PROPERTY_TARGET_DIRECTORY = "generator.item.target.directory";
 	static final String PROPERTY_INPUT_DIRECTORY = "generator.item.input.directory";
 	static final String PROPERTY_CONTEXT_ID = "generator.item.context.id";
 	static final String PROPERTY_CONTENTMODEL_ID = "generator.item.contentmodel.id";
@@ -43,7 +42,6 @@ public final class ItemGenerator extends Questionary implements Generator {
 
 	public void interactive() {
 		try {
-			this.questionTargetDirectory();
 			this.questionResultFile();
 			this.questionRandomData();
 			this.questionContextId();
@@ -53,19 +51,6 @@ public final class ItemGenerator extends Questionary implements Generator {
 		}
 	}
 
-	private void questionTargetDirectory() throws Exception {
-		File targetDirectory;
-		do {
-			targetDirectory = poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir") + "/escidoc-test"), "Where should the xml files be written to [default="
-					+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
-			if (!targetDirectory.exists()){
-				if (poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath() + " [default=yes] ?")){
-					targetDirectory.mkdir();
-				}
-			}
-		} while (!targetDirectory.exists() && !targetDirectory.canWrite());
-		properties.setProperty(PROPERTY_TARGET_DIRECTORY, targetDirectory.getAbsolutePath());
-	}
 
 	private void questionContentModelId() throws Exception {
 		String contentModelId;
@@ -78,8 +63,8 @@ public final class ItemGenerator extends Questionary implements Generator {
 	private void questionResultFile() throws Exception {
 		String resultFile;
 		do {
-			resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv", "What's the path to the result file [default="
-					+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv] ?");
+			resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv", "What's the path to the result file [default="
+					+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-i.csv] ?");
 		} while (resultFile.length() == 0);
 		properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 	}
@@ -114,7 +99,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
 		final List<File> files = new ArrayList<File>();
 		final boolean randomData = Boolean.parseBoolean(properties.getProperty(PROPERTY_RANDOM_DATA));
-		final File targetDirectory = new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
 		final long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
@@ -127,7 +112,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 				String xml = itemMarshaller.marshalDocument(item);
 				FileOutputStream out = null;
 				try {
-					File outFile = File.createTempFile("escidoc-", ".xml", targetDirectory);
+					File outFile = File.createTempFile("item-", ".xml", targetDirectory);
 					out = new FileOutputStream(outFile);
 					files.add(outFile);
 					IOUtils.write(xml, out);

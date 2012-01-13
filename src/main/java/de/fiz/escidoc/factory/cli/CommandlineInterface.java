@@ -2,17 +2,25 @@ package de.fiz.escidoc.factory.cli;
 
 import gnu.getopt.Getopt;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+
+import org.apache.commons.io.IOUtils;
 
 public class CommandlineInterface {
 	private static final String PROPERTY_VALIDITY = "properties.valid";
+	public static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
 
 	private static void printUsage() {
 		StringBuilder helpBuilder = new StringBuilder();
@@ -80,16 +88,35 @@ public class CommandlineInterface {
 		// session
 		if (!Boolean.parseBoolean(properties.getProperty(PROPERTY_VALIDITY))) {
 			System.out.println();
+			File targetDirectory=null;
+			do {
+				Questionary q = new Questionary(new BufferedReader(new InputStreamReader(System.in)), System.out);
+				try{
+					targetDirectory = q.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir")
+						+ "/escidoc-test"), "Where should the xml files be written to [default="
+						+ System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
+					if (!targetDirectory.exists()) {
+						if (q.poseQuestion(Boolean.class, true, "Create directory " + targetDirectory.getAbsolutePath()
+								+ " [default=yes] ?")) {
+							targetDirectory.mkdir();
+						}
+					}
+				}catch (Exception e) {
+					e.printStackTrace();
+				}
+			} while (!targetDirectory.exists() && !targetDirectory.canWrite());
+			properties.setProperty(PROPERTY_TARGET_DIRECTORY, targetDirectory.getAbsolutePath());
 			for (final Generator gen : generators) {
 				System.out.println(":: Settings for " + gen.getClass().getSimpleName());
 				gen.interactive();
 			}
 		}
-		
+
 		// store the properties for convenience
 		System.out.println();
 		try {
-			// properties.store(System.out, "printing the setting for convienience");
+			// properties.store(System.out,
+			// "printing the setting for convienience");
 			final File propFile = new File("generator.properties");
 			properties.store(new FileOutputStream(propFile), "created by escidoc-object-generator");
 			System.out.println("saved properties to " + propFile.getAbsolutePath());
@@ -107,6 +134,33 @@ public class CommandlineInterface {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("\nGenerating jar file...");
+		try {
+			createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.out.println("\nFinished!\n");
+	}
+
+	private static void createJar(String dir) throws IOException {
+		JarOutputStream out=null;
+		InputStream in=null;
+		File directory = new File(dir);
+		File jarFile = new File(directory, "testdaten.jar");
+		try {
+			out = new JarOutputStream(new FileOutputStream(jarFile));
+			for (String name : directory.list()) {
+				if (name.endsWith(".xml") || name.endsWith(".csv") || name.endsWith(".content")) {
+					JarEntry entry = new JarEntry(name);
+					out.putNextEntry(entry);
+					in = new FileInputStream(directory.getAbsolutePath() + "/" + name);
+					IOUtils.copy(in, out);
+				}
+			}
+		} finally {
+			IOUtils.closeQuietly(in);
+			IOUtils.closeQuietly(out);
+		}
 	}
 }

@@ -167,7 +167,7 @@ public abstract class EscidocObjects {
 	 */
 	public static Component createComponentFromRandomData(final File targetDirectory, final long size)
 			throws IOException {
-		File f = File.createTempFile("testdata-", ".content", targetDirectory);
+		File f = File.createTempFile("item-", ".content", targetDirectory);
 		FileOutputStream out = null;
 		try {
 			out = new FileOutputStream(f);

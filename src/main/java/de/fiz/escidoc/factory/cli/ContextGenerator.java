@@ -27,7 +27,6 @@ import de.escidoc.core.resources.om.context.OrganizationalUnitRefs;
 
 public class ContextGenerator extends Questionary implements Generator{
 	private static final String PROPERTY_NUMFILES="generator.context.num";
-	private static final String PROPERTY_TARGET_DIRECTORY="generator.context.target.directory";
 	private static final String PROPERTY_ORGANIZATIONAL_UNIT_ID = "generator.context.ou.id";
 	private static final String PROPERTY_RESULT_PATH = "generator.context.result.path";
 
@@ -39,15 +38,16 @@ public class ContextGenerator extends Questionary implements Generator{
 		this.properties = properties;
 	}
 	
-	public List<File> generateFiles() throws IOException,ParserConfigurationException,InternalClientException{
+	public List<File> generateFiles() throws Exception{
 		final List<File> result=new ArrayList<File>();
 		final int numFiles=Integer.parseInt(properties.getProperty(PROPERTY_NUMFILES));
-		final File targetDirectory=new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		final File targetDirectory=new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
 		int oldPercent,currentPercent=0;
 		for (int i=0;i<numFiles;i++){
 			final OrganizationalUnitRefs ouRefs=new OrganizationalUnitRefs();
 			ouRefs.add(new OrganizationalUnitRef(properties.getProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID)));
-			final AdminDescriptor desc=new AdminDescriptor("What?");
+			final AdminDescriptor desc=new AdminDescriptor("admin");
+			desc.setContent("<void />");
 			final AdminDescriptors adms=new AdminDescriptors();
 			adms.add(desc);
 			final ContextProperties cp=new ContextProperties.Builder("context-" + UUID.randomUUID().toString(), PublicStatus.PENDING)
@@ -92,21 +92,11 @@ public class ContextGenerator extends Questionary implements Generator{
 	public void interactive() {
 		try{
 			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many Contexts should be created [default=10] ? ")));
-			File dir;
-			do {
-				dir = this.poseQuestion(File.class, new File(System.getProperty("java.io.tmpdir") + "/escidoc-test"), "Where should the context xml files be written to [default=" + System.getProperty("java.io.tmpdir") + "/escidoc-test] ?");
-				if (!dir.exists()){
-					if (poseQuestion(Boolean.class, true, "Create directory " + dir.getAbsolutePath() + " [default=yes] ?")){
-						dir.mkdir();
-					}
-				}
-			} while (!dir.exists() && !dir.canWrite());
-			this.properties.setProperty(PROPERTY_TARGET_DIRECTORY, dir.getAbsolutePath());
-			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(String.class, "", "What's the id of the organizational unit to associate the context with? ")));
+			properties.setProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID, String.valueOf(poseQuestion(String.class, "", "What's the id of the organizational unit to associate the context with? ")));
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv", "What's the path to the result file [default="
-						+ properties.getProperty(PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv] ?");
+				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv", "What's the path to the result file [default="
+						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY) + "/testdaten-ctx.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		}catch(Exception e){
