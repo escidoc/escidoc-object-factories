@@ -84,10 +84,8 @@ public class CommandlineInterface {
 			}
 		}
 		// get the settings for the generators through an interactive user
-		// session
-		if (!Boolean.parseBoolean(properties.getProperty(PROPERTY_VALIDITY))) {
-			createSettings(properties,generators);
-		}
+		// session if no properties have been set already
+		createSettings(properties,generators);
 		// store the properties for convenience
 		storeProperties(properties);
 		// generate the XMLS
@@ -122,6 +120,9 @@ public class CommandlineInterface {
 	}
 
 	private static void createSettings(Properties properties, List<Generator> generators) {
+		if (Boolean.parseBoolean(properties.getProperty(PROPERTY_VALIDITY))) {
+			return;
+		}
 		System.out.println();
 		File targetDirectory=null;
 		do {
