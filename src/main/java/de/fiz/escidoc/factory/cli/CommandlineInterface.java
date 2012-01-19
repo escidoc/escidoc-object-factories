@@ -21,8 +21,7 @@ public class CommandlineInterface {
 	private static final String PROPERTY_VALIDITY = "properties.valid";
 	static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
 	private static final String PROPERTY_ARTIFACTORY_UPLOAD_URI = "generator.upload.artifatory.url";
-	private static final String PROPERTY_ARTIFACTORY_USER="generator.artifactory.user";
-	private static final String PROPERTY_ARTIFACTORY_PASS="generator.artifactory.pass";
+	private static boolean uploadJars=false;
 
 	private static void printUsage() {
 		StringBuilder helpBuilder = new StringBuilder();
@@ -36,14 +35,15 @@ public class CommandlineInterface {
 				.append("-c\tgenerate contexts\n")
 				.append("-m\tgenerate content models\n")
 				.append("-r\tgenerate content relations\n")
-				.append("-o\tgenerate organizational unit\n\n")
+				.append("-o\tgenerate organizational unit\n")
+				.append("-u\tupload testdata after generation to a maven repository\n\n")
 				.append("The settings will be saved after each run and can be supplied by the -p switch. If -p is ommitted the program will enter interactive mode\n");
 		System.out.println(helpBuilder.toString());
 	}
 
 	public static void main(String[] args) {
 		final Properties properties = new Properties();
-		final Getopt opt = new Getopt("Escidoc objects generator", args, "hicmrop:");
+		final Getopt opt = new Getopt("Escidoc objects generator", args, "hicmroup:");
 		if (args.length == 0) {
 			printUsage();
 			return;
@@ -70,6 +70,9 @@ public class CommandlineInterface {
 			case 'o':
 				generators.add(new OrganizationalUnitGenerator(properties));
 				break;
+			case 'u':
+				uploadJars=true;
+				break;
 			case 'p':
 				String path = opt.getOptarg();
 				try {
@@ -93,16 +96,18 @@ public class CommandlineInterface {
 		// generate the XMLs
 		generateXMLFiles(generators);
 		// finally upload it to the artifactory
-		try {
-			uploadJar(properties, createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY)));
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (uploadJars){
+			try {
+				uploadJar(properties, createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY)));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		System.out.println("\nFinished!\n");
 	}
 
 	private static void uploadJar(Properties properties, File jarFile) throws IOException{
-		String cli = "mvn deploy:deploy-file -DrepositoryId=snapshots -Durl=" + properties.getProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI) + " -DgroupId=de.fiz.escidoc.factory -DartifactId=testdata -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=" + jarFile.getAbsolutePath();
+		String cli = "mvn deploy:deploy-file -DrepositoryId=snapshots -Durl=" + properties.getProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI) + " -DgroupId=de.fiz.escidoc.test -DartifactId=testdata -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=" + jarFile.getAbsolutePath();
 		Process proc=Runtime.getRuntime().exec(cli);
 		byte[] buf=new byte[1024];
 		int bytesRead;
@@ -152,9 +157,9 @@ public class CommandlineInterface {
 						targetDirectory.mkdir();
 					}
 				}
-				properties.setProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI, q.poseQuestion(String.class, "https://www.escidoc.org/artifactory/libs-snapshots-local/", "What's the upload URI of the target repository [default=https://www.escidoc.org/artifactory/libs-snapshots-local] ?"));
-				properties.setProperty(PROPERTY_ARTIFACTORY_USER, q.poseQuestion(String.class, "none", "What username whould be used for uploading the testdata to the repository ? "));
-				properties.setProperty(PROPERTY_ARTIFACTORY_PASS, q.poseQuestion(String.class, "", "What password whould be used for uploading the testdata to the repository ?"));
+				if (uploadJars){
+					properties.setProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI, q.poseQuestion(String.class, "https://www.escidoc.org/artifactory/libs-snapshots-local/", "What's the upload URI of the target repository [default=https://www.escidoc.org/artifactory/libs-snapshots-local] ?"));
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -170,7 +175,7 @@ public class CommandlineInterface {
 		JarOutputStream out = null;
 		InputStream in = null;
 		File directory = new File(dir);
-		File jarFile = new File(directory, "testdaten.jar");
+		File jarFile = new File(directory, "testdata.jar");
 		try {
 			out = new JarOutputStream(new FileOutputStream(jarFile));
 			for (String name : directory.list()) {

@@ -37,7 +37,7 @@
 	</dependencies>
 	<repositories>
 		<repository>
-			<id>escidoc-snapshots</id>
+			<id>libs-snapshots</id>
 			<name>Escidoc snapshots artifactory</name>
 			<url>https://www.escidoc.org/artifactory/libs-snapshots-local</url>
 		</repository>
