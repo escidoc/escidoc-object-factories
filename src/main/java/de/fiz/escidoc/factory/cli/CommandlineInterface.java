@@ -107,7 +107,7 @@ public class CommandlineInterface {
 	}
 
 	private static void uploadJar(Properties properties, File jarFile) throws IOException{
-		String cli = "mvn deploy:deploy-file -DrepositoryId=snapshots -Durl=" + properties.getProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI) + " -DgroupId=de.fiz.escidoc.test -DartifactId=testdata -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=" + jarFile.getAbsolutePath();
+		String cli = "mvn deploy:deploy-file -DrepositoryId=snapshots -Durl=" + properties.getProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI) + " -DgroupId=org.escidoc.core.performance -DartifactId=testdaten -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=" + jarFile.getAbsolutePath();
 		Process proc=Runtime.getRuntime().exec(cli);
 		byte[] buf=new byte[1024];
 		int bytesRead;
