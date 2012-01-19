@@ -74,26 +74,11 @@ public abstract class EscidocObjects {
 		final Components components = new Components();
 		components.addAll(componentList);
 		// and metadata records
-		final MetadataRecords records = new MetadataRecords();
+		MetadataRecords records;
 		if (mdRecords == null || mdRecords.size() == 0) {
-			// if there are now metadata records, add one "escidoc" record to
-			// make the xml valid
-			MetadataRecord escidoc = new MetadataRecord("escidoc");
-			escidoc.setLastModificationDate(new DateTime());
-			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			factory.setNamespaceAware(true);
-			factory.setCoalescing(true);
-			factory.setValidating(true);
-			final DocumentBuilder builder = factory.newDocumentBuilder();
-			final Document doc = builder.newDocument();
-			final Element mdRecordContent = doc.createElementNS(null, "test");
-			final Element titleElmt = doc.createElementNS("http://purl.org/dc/elements/1.1/", "title");
-			titleElmt.setPrefix("dc");
-			titleElmt.setNodeValue("test-title");
-			mdRecordContent.appendChild(titleElmt);
-			escidoc.setContent(mdRecordContent);
-			records.add(escidoc);
+			records=createMetadataRecords("test-object","item");
 		} else {
+			records=new MetadataRecords();
 			records.addAll(mdRecords);
 		}
 		return new Item.Builder(properties)
@@ -283,5 +268,25 @@ public abstract class EscidocObjects {
 				.build();
 		return new OrganizationalUnit.Builder(properties)
 				.build();
+	}
+	
+	public static MetadataRecords createMetadataRecords(String title,String nameSpace) throws ParserConfigurationException{
+		MetadataRecords records=new MetadataRecords();
+		MetadataRecord escidoc = new MetadataRecord("escidoc");
+		escidoc.setLastModificationDate(new DateTime());
+		final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setNamespaceAware(true);
+		factory.setCoalescing(true);
+		factory.setValidating(true);
+		final DocumentBuilder builder = factory.newDocumentBuilder();
+		final Document doc = builder.newDocument();
+		final Element mdRecordContent = doc.createElementNS(null, nameSpace);
+		final Element titleElmt = doc.createElementNS("http://purl.org/dc/elements/1.1/", "title");
+		titleElmt.setPrefix("dc");
+		titleElmt.setTextContent(title);
+		mdRecordContent.appendChild(titleElmt);
+		escidoc.setContent(mdRecordContent);
+		records.add(escidoc);
+		return records;
 	}
 }

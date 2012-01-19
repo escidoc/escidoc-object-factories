@@ -18,8 +18,9 @@ import java.util.jar.JarOutputStream;
 import org.apache.commons.io.IOUtils;
 
 public class CommandlineInterface {
-	private static final String PROPERTY_VALIDITY = "properties.valid";
 	static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
+
+	private static final String PROPERTY_VALIDITY = "properties.valid";
 	private static final String PROPERTY_ARTIFACTORY_UPLOAD_URI = "generator.upload.artifatory.url";
 	private static boolean uploadJars=false;
 
@@ -36,7 +37,7 @@ public class CommandlineInterface {
 				.append("-m\tgenerate content models\n")
 				.append("-r\tgenerate content relations\n")
 				.append("-o\tgenerate organizational unit\n")
-				.append("-u\tupload testdata after generation to a maven repository\n\n")
+				.append("-l <path>\tprefix for generated xmls in CSV files for testplan\n")
 				.append("The settings will be saved after each run and can be supplied by the -p switch. If -p is ommitted the program will enter interactive mode\n");
 		System.out.println(helpBuilder.toString());
 	}

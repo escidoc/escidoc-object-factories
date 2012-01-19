@@ -126,7 +126,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 			try {
 				out = new FileOutputStream(result, false);
 				for (File f : files) {
-					out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+					out.write(new String("testdaten/daten/" + f.getName()  + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
 					out.flush();
 				}
 			} finally {

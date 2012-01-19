@@ -17,9 +17,12 @@ import org.apache.commons.io.IOUtils;
 
 import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
+import de.escidoc.core.resources.common.MetadataRecord;
+import de.escidoc.core.resources.common.MetadataRecords;
 import de.escidoc.core.resources.common.properties.PublicStatus;
 import de.escidoc.core.resources.oum.OrganizationalUnit;
 import de.escidoc.core.resources.oum.OrganizationalUnitProperties;
+import de.fiz.escidoc.factory.EscidocObjects;
 
 public class OrganizationalUnitGenerator extends Questionary implements Generator {
 	private static final String PROPERTY_NUMFILES = "generator.organizationalunit.num";
@@ -43,6 +46,7 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 			final OrganizationalUnitProperties op = new OrganizationalUnitProperties.Builder("ou-"
 					+ UUID.randomUUID().toString(), PublicStatus.PENDING).build();
 			final OrganizationalUnit ou = new OrganizationalUnit.Builder(op).build();
+			ou.setMetadataRecords(EscidocObjects.createMetadataRecords("test-ou","ou"));
 			final File xmlFile = File.createTempFile("ou-", ".xml", targetDirectory);
 			final String xml = marshaller.marshalDocument(ou);
 			OutputStream out = null;
@@ -64,7 +68,7 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 		try {
 			out = new FileOutputStream(resultFile, false);
 			for (File f : result) {
-				out.write(new String(f.getAbsolutePath() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.write(new String("testdaten/daten/" + f.getName()  + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
 				out.flush();
 			}
 		} finally {
