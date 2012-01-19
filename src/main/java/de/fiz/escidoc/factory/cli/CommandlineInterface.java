@@ -20,6 +20,9 @@ import org.apache.commons.io.IOUtils;
 public class CommandlineInterface {
 	private static final String PROPERTY_VALIDITY = "properties.valid";
 	static final String PROPERTY_TARGET_DIRECTORY = "generator.target.directory";
+	private static final String PROPERTY_ARTIFACTORY_UPLOAD_URI = "generator.upload.artifatory.url";
+	private static final String PROPERTY_ARTIFACTORY_USER="generator.artifactory.user";
+	private static final String PROPERTY_ARTIFACTORY_PASS="generator.artifactory.pass";
 
 	private static void printUsage() {
 		StringBuilder helpBuilder = new StringBuilder();
@@ -89,9 +92,23 @@ public class CommandlineInterface {
 		storeProperties(properties);
 		// generate the XMLs
 		generateXMLFiles(generators);
-		// and create the jar file
-		createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
+		// finally upload it to the artifactory
+		try {
+			uploadJar(properties, createJar(properties.getProperty(PROPERTY_TARGET_DIRECTORY)));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.out.println("\nFinished!\n");
+	}
+
+	private static void uploadJar(Properties properties, File jarFile) throws IOException{
+		String cli = "mvn deploy:deploy-file -DrepositoryId=snapshots -Durl=" + properties.getProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI) + " -DgroupId=de.fiz.escidoc.factory -DartifactId=testdata -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=" + jarFile.getAbsolutePath();
+		Process proc=Runtime.getRuntime().exec(cli);
+		byte[] buf=new byte[1024];
+		int bytesRead;
+		while ((bytesRead=proc.getInputStream().read(buf))!=-1){
+			System.out.println(new String(buf,0,bytesRead));
+		}
 	}
 
 	private static void generateXMLFiles(List<Generator> generators) {
@@ -135,6 +152,9 @@ public class CommandlineInterface {
 						targetDirectory.mkdir();
 					}
 				}
+				properties.setProperty(PROPERTY_ARTIFACTORY_UPLOAD_URI, q.poseQuestion(String.class, "https://www.escidoc.org/artifactory/libs-snapshots-local/", "What's the upload URI of the target repository [default=https://www.escidoc.org/artifactory/libs-snapshots-local] ?"));
+				properties.setProperty(PROPERTY_ARTIFACTORY_USER, q.poseQuestion(String.class, "none", "What username whould be used for uploading the testdata to the repository ? "));
+				properties.setProperty(PROPERTY_ARTIFACTORY_PASS, q.poseQuestion(String.class, "", "What password whould be used for uploading the testdata to the repository ?"));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -146,7 +166,7 @@ public class CommandlineInterface {
 		}
 	}
 
-	private static void createJar(String dir) {
+	private static File createJar(String dir) {
 		JarOutputStream out = null;
 		InputStream in = null;
 		File directory = new File(dir);
@@ -167,5 +187,6 @@ public class CommandlineInterface {
 			IOUtils.closeQuietly(in);
 			IOUtils.closeQuietly(out);
 		}
+		return jarFile;
 	}
 }
