@@ -96,12 +96,12 @@ public abstract class EscidocObjects {
 	 *            the URI of the {@link Component}'s data
 	 * @return a new {@link Component} instance
 	 */
-	public static Component createComponentFromURI(final String pid, final URI uri) {
+	public static Component createComponentFromURI(final String pid, final String fileName) {
 		ComponentContent content = new ComponentContent();
-		content.setXLinkHref(uri.toASCIIString());
+		content.setXLinkHref("file:" + fileName);
 		content.setStorage(StorageType.INTERNAL_MANAGED);
 		Component comp = new Component();
-		ComponentProperties props = new ComponentProperties.Builder(pid, uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1))
+		ComponentProperties props = new ComponentProperties.Builder(pid, fileName)
 				.mimeType("application/octet-stream")
 				.contentCategory("pre-print")
 				.validStatus("valid")
@@ -182,7 +182,7 @@ public abstract class EscidocObjects {
 				numWritten += len;
 			}
 			out.flush();
-			return createComponentFromURI("why?", f.toURI());
+			return createComponentFromURI("why?", f.getName());
 		} finally {
 			out.close();
 		}
