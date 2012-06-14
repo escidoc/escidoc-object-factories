@@ -43,9 +43,11 @@ public class OrganizationalUnitGenerator extends Questionary implements Generato
 		final File targetDirectory = new File(properties.getProperty(PROPERTY_TARGET_DIRECTORY));
 		int oldPercent, currentPercent = 0;
 		for (int i = 0; i < numFiles; i++) {
-			final OrganizationalUnitProperties op = new OrganizationalUnitProperties.Builder("ou-"
-					+ UUID.randomUUID().toString(), PublicStatus.PENDING).build();
-			final OrganizationalUnit ou = new OrganizationalUnit.Builder(op).build();
+			final OrganizationalUnitProperties op = new OrganizationalUnitProperties();
+			op.setName("ou-" + UUID.randomUUID().toString());
+			op.setPublicStatus(PublicStatus.PENDING);
+			final OrganizationalUnit ou = new OrganizationalUnit();
+			ou.setProperties(op);
 			ou.setMetadataRecords(EscidocObjects.createMetadataRecords("test-ou","ou"));
 			final File xmlFile = File.createTempFile("ou-", ".xml", targetDirectory);
 			final String xml = marshaller.marshalDocument(ou);

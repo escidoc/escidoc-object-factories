@@ -46,11 +46,12 @@ public class ContextGenerator extends Questionary implements Generator {
 			desc.setContent("<void />");
 			final AdminDescriptors adms = new AdminDescriptors();
 			adms.add(desc);
-			final ContextProperties cp = new ContextProperties.Builder("context-" + UUID.randomUUID().toString(), PublicStatus.PENDING)
-					.type("type1")
-					.organizationUnitRefs(ouRefs)
-					.description("test-description")
-					.build();
+			final ContextProperties cp = new ContextProperties();
+			cp.setName("context-" + UUID.randomUUID().toString());
+			cp.setPublicStatus(PublicStatus.PENDING);
+			cp.setType("type1");
+			cp.setOrganizationalUnitRefs(ouRefs);
+			cp.setDescription("test-description");
 			final Context ctx = new Context();
 			ctx.setProperties(cp);
 			ctx.setAdminDescriptors(adms);
@@ -75,7 +76,8 @@ public class ContextGenerator extends Questionary implements Generator {
 		try {
 			out = new FileOutputStream(resultFile, false);
 			for (File f : result) {
-				out.write(new String("testdaten/daten/" + f.getName() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.write(new String("testdaten/daten/" + f.getName() + "," + f.getName() + ",text/xml\n")
+						.getBytes("UTF-8"));
 				out.flush();
 			}
 		} finally {
@@ -87,14 +89,17 @@ public class ContextGenerator extends Questionary implements Generator {
 
 	public void interactive() {
 		try {
-			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many Contexts should be created [default=10] ? ")));
-			properties.setProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID, String.valueOf(poseQuestion(String.class, "", "What's the id of the organizational unit to associate the context with? ")));
+			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10,
+					"How many Contexts should be created [default=10] ? ")));
+			properties.setProperty(PROPERTY_ORGANIZATIONAL_UNIT_ID, String.valueOf(poseQuestion(String.class, "",
+					"What's the id of the organizational unit to associate the context with? ")));
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
-						+ "/testdaten-ctx.csv", "What's the path to the result file [default="
-						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
-						+ "/testdaten-ctx.csv] ?");
+				resultFile = poseQuestion(String.class,
+						properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+								+ "/testdaten-ctx.csv", "What's the path to the result file [default="
+								+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+								+ "/testdaten-ctx.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		} catch (Exception e) {

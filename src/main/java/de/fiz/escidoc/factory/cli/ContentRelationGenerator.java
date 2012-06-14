@@ -42,11 +42,12 @@ public class ContentRelationGenerator extends Questionary implements Generator {
 		for (int i = 0; i < numFiles; i++) {
 			final ContentRelationProperties cp = new ContentRelationProperties();
 			cp.setDescription("test");
-			final ContentRelation rel = new ContentRelation.Builder(cp)
-					.type(URI.create("http://www.escidoc.de/ontologies/mpdl-ontologies/content-relations#isConstituentOf"))
-					.subject(new ContextRef(properties.getProperty(PROPERTY_SUBJECT_ID)))
-					.object(new ContextRef(properties.getProperty(PROPERTY_SUBJECT_ID)))
-					.build();
+			final ContentRelation rel = new ContentRelation();
+			rel.setProperties(cp);
+			rel.setType(URI
+					.create("http://www.escidoc.de/ontologies/mpdl-ontologies/content-relations#isConstituentOf"));
+			rel.setSubject(new ContextRef(properties.getProperty(PROPERTY_SUBJECT_ID)));
+			rel.setObject(new ContextRef(properties.getProperty(PROPERTY_SUBJECT_ID)));
 			final File xmlFile = File.createTempFile("contentrelation-", ".xml", targetDirectory);
 			final String xml = marshaller.marshalDocument(rel);
 			OutputStream out = null;
@@ -68,7 +69,8 @@ public class ContentRelationGenerator extends Questionary implements Generator {
 		try {
 			out = new FileOutputStream(resultFile, false);
 			for (File f : result) {
-				out.write(new String("testdaten/daten/" + f.getName() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.write(new String("testdaten/daten/" + f.getName() + "," + f.getName() + ",text/xml\n")
+						.getBytes("UTF-8"));
 				out.flush();
 			}
 		} finally {
@@ -80,14 +82,17 @@ public class ContentRelationGenerator extends Questionary implements Generator {
 
 	public void interactive() {
 		try {
-			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10, "How many content relations should be created [default=10] ? ")));
-			properties.setProperty(PROPERTY_SUBJECT_ID, poseQuestion(String.class, "", "What's the context's id for the relations ? "));
+			properties.setProperty(PROPERTY_NUMFILES, String.valueOf(poseQuestion(Integer.class, 10,
+					"How many content relations should be created [default=10] ? ")));
+			properties.setProperty(PROPERTY_SUBJECT_ID,
+					poseQuestion(String.class, "", "What's the context's id for the relations ? "));
 			String resultFile;
 			do {
-				resultFile = poseQuestion(String.class, properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
-						+ "/testdaten-cr.csv", "What's the path to the result file [default="
-						+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
-						+ "/testdaten-cr.csv] ?");
+				resultFile = poseQuestion(String.class,
+						properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+								+ "/testdaten-cr.csv", "What's the path to the result file [default="
+								+ properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY)
+								+ "/testdaten-cr.csv] ?");
 			} while (resultFile.length() == 0);
 			properties.setProperty(PROPERTY_RESULT_PATH, resultFile);
 		} catch (Exception e) {

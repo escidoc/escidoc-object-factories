@@ -39,9 +39,8 @@ import de.escidoc.core.resources.oum.OrganizationalUnit;
 import de.escidoc.core.resources.oum.OrganizationalUnitProperties;
 
 /**
- * Abstract factory class for generating different kinds of eScidoc objects like
- * items, contexts and OUs This class is intended to be used in testing
- * environments for data generation
+ * Abstract factory class for generating different kinds of eScidoc objects like items, contexts and OUs This class is
+ * intended to be used in testing environments for data generation
  * 
  * @author fasseg
  */
@@ -66,25 +65,26 @@ public abstract class EscidocObjects {
 			final List<Component> componentList, final List<MetadataRecord> mdRecords)
 			throws ParserConfigurationException {
 		// create the Item' properties
-		final ItemProperties properties = new ItemProperties.Builder(PublicStatus.PENDING)
-				.context(new ContextRef(contextId))
-				.contentModel(new ContentModelRef(contentModelId))
-				.build();
+		final ItemProperties properties = new ItemProperties();
+		properties.setPublicStatus(PublicStatus.PENDING);
+		properties.setContext(new ContextRef(contextId));
+		properties.setContentModel(new ContentModelRef(contentModelId));
 		// a list of Components
 		final Components components = new Components();
 		components.addAll(componentList);
 		// and metadata records
 		MetadataRecords records;
 		if (mdRecords == null || mdRecords.size() == 0) {
-			records=createMetadataRecords("test-object","item");
+			records = createMetadataRecords("test-object", "item");
 		} else {
-			records=new MetadataRecords();
+			records = new MetadataRecords();
 			records.addAll(mdRecords);
 		}
-		return new Item.Builder(properties)
-				.mdRecords(records)
-				.components(components)
-				.build();
+		Item i = new Item();
+		i.setProperties(properties);
+		i.setMetadataRecords(records);
+		i.setComponents(components);
+		return i;
 	}
 
 	/**
@@ -99,14 +99,15 @@ public abstract class EscidocObjects {
 	public static Component createComponentFromURI(final String pid, final String fileName) {
 		ComponentContent content = new ComponentContent();
 		content.setXLinkHref("file:" + fileName);
-		content.setStorage(StorageType.INTERNAL_MANAGED);
+		content.setStorageType(StorageType.INTERNAL_MANAGED);
 		Component comp = new Component();
-		ComponentProperties props = new ComponentProperties.Builder(pid, fileName)
-				.mimeType("application/octet-stream")
-				.contentCategory("pre-print")
-				.validStatus("valid")
-				.visibility("public")
-				.build();
+		ComponentProperties props = new ComponentProperties();
+		props.setPid(pid);
+		props.setFileName(fileName);
+		props.setMimeType("application/octet-stream");
+		props.setContentCategory("pre-print");
+		props.setValidStatus("valid");
+		props.setVisibility("public");
 		comp.setProperties(props);
 		comp.setContent(content);
 		return comp;
@@ -120,8 +121,9 @@ public abstract class EscidocObjects {
 	 * @return a new {@link ContentStream} instance
 	 */
 	public static ContentStream createContentStreamFromURI(final URI uri) {
-		ContentStream stream = new ContentStream("test-content", StorageType.INTERNAL_MANAGED.toString(), "application/octet-stream");
-		stream.setHrefOrBase64Content(uri.toString());
+		ContentStream stream = new ContentStream("test-content", StorageType.INTERNAL_MANAGED,
+				"application/octet-stream");
+		stream.setXLinkHref(uri.toString());
 		return stream;
 	}
 
@@ -157,8 +159,7 @@ public abstract class EscidocObjects {
 	}
 
 	/**
-	 * Create a {@link Component} from random data and the data into content
-	 * file in a given directory
+	 * Create a {@link Component} from random data and the data into content file in a given directory
 	 * 
 	 * @param targetDirectory
 	 *            the directory to write the content file to
@@ -241,8 +242,7 @@ public abstract class EscidocObjects {
 	 * @param name
 	 *            the name of the {@link Context}
 	 * @param ouIds
-	 *            the {@link List} of organizational unit ids of the
-	 *            {@link Context}
+	 *            the {@link List} of organizational unit ids of the {@link Context}
 	 * @return a new {@link Context} instance
 	 */
 	public static Context createContext(final String name, final List<String> ouIds) {
@@ -250,10 +250,14 @@ public abstract class EscidocObjects {
 		for (String ouId : ouIds) {
 			refs.add(new OrganizationalUnitRef(ouId));
 		}
-		final ContextProperties properties = new ContextProperties.Builder(name, PublicStatus.PENDING)
-				.organizationUnitRefs(refs)
-				.build();
-		return new Context(properties, new AdminDescriptors());
+		final ContextProperties properties = new ContextProperties();
+		properties.setName(name);
+		properties.setPublicStatus(PublicStatus.PENDING);
+		properties.setOrganizationalUnitRefs(refs);
+		Context ctx=new Context();
+		ctx.setProperties(properties);
+		ctx.setAdminDescriptors(new AdminDescriptors());
+		return ctx;
 	}
 
 	/**
@@ -264,14 +268,17 @@ public abstract class EscidocObjects {
 	 * @return a new {@link OrganizationalUnit} instance
 	 */
 	public static OrganizationalUnit createOrganizationalUnit(final String name) {
-		final OrganizationalUnitProperties properties = new OrganizationalUnitProperties.Builder(name, PublicStatus.PENDING)
-				.build();
-		return new OrganizationalUnit.Builder(properties)
-				.build();
+		final OrganizationalUnitProperties properties = new OrganizationalUnitProperties();
+		properties.setName(name);
+		properties.setPublicStatus(PublicStatus.PENDING);
+		OrganizationalUnit ou=new OrganizationalUnit();
+		ou.setProperties(properties);
+		return ou;
 	}
-	
-	public static MetadataRecords createMetadataRecords(String title,String nameSpace) throws ParserConfigurationException{
-		MetadataRecords records=new MetadataRecords();
+
+	public static MetadataRecords createMetadataRecords(String title, String nameSpace)
+			throws ParserConfigurationException {
+		MetadataRecords records = new MetadataRecords();
 		MetadataRecord escidoc = new MetadataRecord("escidoc");
 		escidoc.setLastModificationDate(new DateTime());
 		final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
