@@ -96,7 +96,10 @@ public final class ItemGenerator extends Questionary implements Generator {
 		final List<File> files = new ArrayList<File>();
 		final boolean randomData = Boolean.parseBoolean(properties.getProperty(PROPERTY_RANDOM_DATA));
 		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
-		final long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
+		long size=0;
+		if (properties.getProperty(PROPERTY_RANDOM_SIZE_FILES) != null){
+			size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
+		}
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
 		if (randomData) {
