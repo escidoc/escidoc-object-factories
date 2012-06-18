@@ -5,10 +5,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -27,6 +29,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 	static final String PROPERTY_CONTEXT_ID = "generator.item.context.id";
 	static final String PROPERTY_CONTENTMODEL_ID = "generator.item.contentmodel.id";
 	static final String PROPERTY_RESULT_PATH = "generator.item.result.path";
+	static final String PROPERTY_FILE_TYPES = "generator.item.input.types";
 
 	private final Properties properties;
 	private final Marshaller<Item> itemMarshaller = Marshaller.getMarshaller(Item.class);
@@ -88,6 +91,11 @@ public final class ItemGenerator extends Questionary implements Generator {
 						+ System.getProperty("java.io.tmpdir") + "] ?");
 			} while (!dir.exists() && !dir.canRead());
 			this.properties.setProperty(PROPERTY_INPUT_DIRECTORY, dir.getAbsolutePath());
+			String types=this.poseQuestion(String.class, "*", "What filetypes should be used for creating the items? Separate multiple types by commata [default=*]");
+			if (types.length() == 0){
+				types="*";
+			}
+			this.properties.setProperty(PROPERTY_FILE_TYPES, types);
 
 		}
 	}
@@ -96,47 +104,96 @@ public final class ItemGenerator extends Questionary implements Generator {
 		final List<File> files = new ArrayList<File>();
 		final boolean randomData = Boolean.parseBoolean(properties.getProperty(PROPERTY_RANDOM_DATA));
 		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
-		long size=0;
-		if (properties.getProperty(PROPERTY_RANDOM_SIZE_FILES) != null){
-			size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
-		}
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
 		if (randomData) {
-			final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_RANDOM_NUM_FILES));
-			int currentPercent = 0;
-			int oldPercent = 0;
-			for (int i = 0; i < numFiles; i++) {
-				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromRandomData(targetDirectory, size)));
-				String xml = itemMarshaller.marshalDocument(item);
-				FileOutputStream out = null;
-				try {
-					File outFile = File.createTempFile("item-", ".xml", targetDirectory);
-					out = new FileOutputStream(outFile);
-					files.add(outFile);
-					IOUtils.write(xml, out);
-					oldPercent = currentPercent;
-					currentPercent = (int) ((double) i / (double) numFiles * 100d);
-					if (currentPercent > oldPercent) {
-						ProgressBar.printProgressBar(currentPercent);
-					}
-				} finally {
-					out.close();
-				}
-			}
-			final File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
-			FileOutputStream out = null;
+			generateRandomData(contextId, contentModelId, targetDirectory, files);
+		} else {
+			generateData(contextId, contentModelId, targetDirectory, files, new File(properties.getProperty(PROPERTY_INPUT_DIRECTORY)),this.properties.getProperty(PROPERTY_FILE_TYPES).split(","));
+		}
+		ProgressBar.printProgressBar(100, true);
+		return files;
+	}
+
+	private void generateData(String contextId, String contentModelId, File targetDirectory, List<File> files,
+			File inputDirectory, String[] fileTypes) throws IOException,ParserConfigurationException,InternalClientException {
+		List<File> inputs = getFiles(inputDirectory, fileTypes);
+		for (File input : inputs) {
+			OutputStream out = null;
 			try {
-				out = new FileOutputStream(result, false);
-				for (File f : files) {
-					out.write(new String("testdaten/daten/" + f.getName()  + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
-					out.flush();
-				}
+				File outFile = File.createTempFile("item-", ".xml", targetDirectory);
+				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromURI("component-"
+						+ UUID.randomUUID().toString(), input.getAbsolutePath())));
+				String xml = itemMarshaller.marshalDocument(item);
+				out = new FileOutputStream(outFile);
+				files.add(outFile);
+				IOUtils.write(xml, out);
 			} finally {
 				IOUtils.closeQuietly(out);
 			}
 		}
-		ProgressBar.printProgressBar(100, true);
+		System.out.println(":: generated " + files.size() + " items");
+	}
+
+	private List<File> getFiles(File inputDirectory, String[] fileTypes) {
+		List<File> files = new ArrayList<File>();
+		for (String name : inputDirectory.list()) {
+			File f = new File(inputDirectory, name);
+			if (f.isFile() && f.canRead() && isOfType(f, fileTypes)) {
+				files.add(f);
+			} else if (f.isDirectory() && f.canRead()) {
+				files.addAll(getFiles(f, fileTypes));
+			}
+		}
 		return files;
+	}
+
+	private boolean isOfType(File f, String[] fileTypes) {
+		for (String type : fileTypes) {
+			if (type.equals("*")) {
+				return true;
+			}else if (f.getName().endsWith("." + type)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void generateRandomData(String contextId, String contentModelId, File targetDirectory, List<File> files)
+			throws IOException,ParserConfigurationException,InternalClientException {
+		final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_RANDOM_NUM_FILES));
+		int currentPercent = 0;
+		int oldPercent = 0;
+		long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
+
+		for (int i = 0; i < numFiles; i++) {
+			Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromRandomData(targetDirectory, size)));
+			String xml = itemMarshaller.marshalDocument(item);
+			FileOutputStream out = null;
+			try {
+				File outFile = File.createTempFile("item-", ".xml", targetDirectory);
+				out = new FileOutputStream(outFile);
+				files.add(outFile);
+				IOUtils.write(xml, out);
+				oldPercent = currentPercent;
+				currentPercent = (int) ((double) i / (double) numFiles * 100d);
+				if (currentPercent > oldPercent) {
+					ProgressBar.printProgressBar(currentPercent);
+				}
+			} finally {
+				out.close();
+			}
+		}
+		final File result = new File(properties.getProperty(PROPERTY_RESULT_PATH));
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(result, false);
+			for (File f : files) {
+				out.write(new String("testdaten/daten/" + f.getName() + "," + f.getName() + ",text/xml\n").getBytes("UTF-8"));
+				out.flush();
+			}
+		} finally {
+			IOUtils.closeQuietly(out);
+		}
 	}
 }
