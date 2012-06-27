@@ -96,10 +96,10 @@ public abstract class EscidocObjects {
 	 *            the URI of the {@link Component}'s data
 	 * @return a new {@link Component} instance
 	 */
-	public static Component createComponentFromURI(final String pid, final String fileName) {
+	public static Component createComponentFromURI(final String pid, final String fileName,StorageType storageType) {
 		ComponentContent content = new ComponentContent();
 		content.setXLinkHref("file:" + fileName);
-		content.setStorageType(StorageType.INTERNAL_MANAGED);
+		content.setStorageType(storageType);
 		Component comp = new Component();
 		ComponentProperties props = new ComponentProperties();
 		props.setPid(pid);
@@ -120,8 +120,8 @@ public abstract class EscidocObjects {
 	 *            the URI which holds the {@link ContentStream}'s data
 	 * @return a new {@link ContentStream} instance
 	 */
-	public static ContentStream createContentStreamFromURI(final URI uri) {
-		ContentStream stream = new ContentStream("test-content", StorageType.INTERNAL_MANAGED,
+	public static ContentStream createContentStreamFromURI(final URI uri,StorageType storageType) {
+		ContentStream stream = new ContentStream("test-content", storageType,
 				"application/octet-stream");
 		stream.setXLinkHref(uri.toString());
 		return stream;
@@ -137,7 +137,7 @@ public abstract class EscidocObjects {
 	 * @return a new {@link ContentStream} instance
 	 * @throws IOException
 	 */
-	public static ContentStream createContentStreamFromRandomData(final File targetDirectory, final long size)
+	public static ContentStream createContentStreamFromRandomData(final File targetDirectory, final long size,StorageType storageType)
 			throws IOException {
 		File f = File.createTempFile("testdata-", ".content", targetDirectory);
 		FileOutputStream out = null;
@@ -152,7 +152,7 @@ public abstract class EscidocObjects {
 				numWritten += len;
 			}
 			out.flush();
-			return createContentStreamFromURI(f.toURI());
+			return createContentStreamFromURI(f.toURI(),storageType);
 		} finally {
 			out.close();
 		}
@@ -168,7 +168,7 @@ public abstract class EscidocObjects {
 	 * @return a new {@link Component} instance
 	 * @throws IOException
 	 */
-	public static Component createComponentFromRandomData(final File targetDirectory, final long size)
+	public static Component createComponentFromRandomData(final File targetDirectory, final long size,StorageType storageType)
 			throws IOException {
 		File f = File.createTempFile("item-", ".content", targetDirectory);
 		FileOutputStream out = null;
@@ -183,7 +183,7 @@ public abstract class EscidocObjects {
 				numWritten += len;
 			}
 			out.flush();
-			return createComponentFromURI("why?", f.getName());
+			return createComponentFromURI("why?", f.getName(),storageType);
 		} finally {
 			out.close();
 		}

@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import de.escidoc.core.client.exceptions.InternalClientException;
 import de.escidoc.core.common.jibx.Marshaller;
 import de.escidoc.core.resources.om.item.Item;
+import de.escidoc.core.resources.om.item.StorageType;
 import de.fiz.escidoc.factory.EscidocObjects;
 
 public final class ItemGenerator extends Questionary implements Generator {
@@ -30,6 +31,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 	static final String PROPERTY_CONTENTMODEL_ID = "generator.item.contentmodel.id";
 	static final String PROPERTY_RESULT_PATH = "generator.item.result.path";
 	static final String PROPERTY_FILE_TYPES = "generator.item.input.types";
+	static final String PROPERTY_STORAGE_TYPE = "generator.item.storage.type";
 
 	private final Properties properties;
 	private final Marshaller<Item> itemMarshaller = Marshaller.getMarshaller(Item.class);
@@ -45,9 +47,25 @@ public final class ItemGenerator extends Questionary implements Generator {
 			this.questionRandomData();
 			this.questionContextId();
 			this.questionContentModelId();
+			this.questionStorageType();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void questionStorageType() throws Exception{
+		StorageType storageType;
+		switch(poseQuestion(Integer.class, 1, "Which Storage type should be used? [default=1]\n[1 = INTERNAL_MANAGED, 2 = EXTERNAL_MANAGED, 3 = EXTERNAL_URL] ")){
+		case 2:
+			storageType=StorageType.EXTERNAL_MANAGED;
+			break;
+		case 3:
+			storageType=StorageType.EXTERNAL_URL;
+			break;
+		default:
+			storageType=StorageType.INTERNAL_MANAGED;
+		}
+		properties.setProperty(PROPERTY_STORAGE_TYPE, storageType.toString());
 	}
 
 	private void questionContentModelId() throws Exception {
@@ -106,24 +124,25 @@ public final class ItemGenerator extends Questionary implements Generator {
 		final File targetDirectory = new File(properties.getProperty(CommandlineInterface.PROPERTY_TARGET_DIRECTORY));
 		final String contextId = properties.getProperty(PROPERTY_CONTEXT_ID);
 		final String contentModelId = properties.getProperty(PROPERTY_CONTENTMODEL_ID);
+		final StorageType storageType= StorageType.valueOf(properties.getProperty(PROPERTY_STORAGE_TYPE));
 		if (randomData) {
-			generateRandomData(contextId, contentModelId, targetDirectory, files);
+			generateRandomData(contextId, contentModelId, targetDirectory, files,storageType);
 		} else {
-			generateData(contextId, contentModelId, targetDirectory, files, new File(properties.getProperty(PROPERTY_INPUT_DIRECTORY)),this.properties.getProperty(PROPERTY_FILE_TYPES).split(","));
+			generateData(contextId, contentModelId, targetDirectory, files, new File(properties.getProperty(PROPERTY_INPUT_DIRECTORY)),this.properties.getProperty(PROPERTY_FILE_TYPES).split(","),storageType);
 		}
 		ProgressBar.printProgressBar(100, true);
 		return files;
 	}
 
 	private void generateData(String contextId, String contentModelId, File targetDirectory, List<File> files,
-			File inputDirectory, String[] fileTypes) throws IOException,ParserConfigurationException,InternalClientException {
+			File inputDirectory, String[] fileTypes,StorageType storageType) throws IOException,ParserConfigurationException,InternalClientException {
 		List<File> inputs = getFiles(inputDirectory, fileTypes);
 		for (File input : inputs) {
 			OutputStream out = null;
 			try {
 				File outFile = File.createTempFile("item-", ".xml", targetDirectory);
 				Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromURI("component-"
-						+ UUID.randomUUID().toString(), input.getAbsolutePath())));
+						+ UUID.randomUUID().toString(), input.getAbsolutePath(),storageType)));
 				String xml = itemMarshaller.marshalDocument(item);
 				out = new FileOutputStream(outFile);
 				files.add(outFile);
@@ -159,7 +178,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 		return false;
 	}
 
-	private void generateRandomData(String contextId, String contentModelId, File targetDirectory, List<File> files)
+	private void generateRandomData(String contextId, String contentModelId, File targetDirectory, List<File> files,StorageType storageType)
 			throws IOException,ParserConfigurationException,InternalClientException {
 		final int numFiles = Integer.parseInt(properties.getProperty(PROPERTY_RANDOM_NUM_FILES));
 		int currentPercent = 0;
@@ -167,7 +186,7 @@ public final class ItemGenerator extends Questionary implements Generator {
 		long size = Long.parseLong(properties.getProperty(PROPERTY_RANDOM_SIZE_FILES));
 
 		for (int i = 0; i < numFiles; i++) {
-			Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromRandomData(targetDirectory, size)));
+			Item item = EscidocObjects.createItem(contextId, contentModelId, Arrays.asList(EscidocObjects.createComponentFromRandomData(targetDirectory, size,storageType)));
 			String xml = itemMarshaller.marshalDocument(item);
 			FileOutputStream out = null;
 			try {
